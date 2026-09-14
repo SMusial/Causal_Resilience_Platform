@@ -44,7 +44,7 @@ This repository is under active development. The implementation follows a gated 
 | Slice | Scope | Status |
 |---|---|---|
 | 1 | Schemas, provenance, dependencies, tests | ✅ Complete — commit `0bbe918` |
-| 2 | Structural DGP, randomized contrast, oracle | 🔲 Pending |
+| 2 | Structural DGP, randomized contrast, oracle | ✅ Complete — commit `75cb440` |
 | 3 | First Streamlit page, Lessons 1–2, target-trial card | 🔲 Pending |
 | 4 | Confounding, DAG, Lessons 3–4 | 🔲 Pending |
 | 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | 🔲 Pending |
@@ -119,7 +119,7 @@ streamlit run app.py
 pytest -v
 ```
 
-Current result: **39 passed** in `tests/foundations/test_schemas.py`.
+Current result: **81 passed** across `tests/foundations/test_schemas.py`, `test_dgp.py`, and `test_estimators.py`.
 
 ## Data model (Slice 1)
 
@@ -152,7 +152,34 @@ Oracle fields (`potential_outcome_0`, `potential_outcome_1`, `propensity_true`) 
 
 `Provenance` attaches seed, scenario identifier, generator version, schema version, creation timestamp, and an `oracle_used` flag to every dataset and estimate.
 
+## Data model (Slice 2)
+
+### Structural data-generating process
+
+`TelecomFoundationsDGP` generates synthetic incident episodes using structural equations:
+
+```text
+baseline_impact = 100 + 240 × severity + noise
+Y(0) = max(0, baseline_impact)
+Y(1) = max(0, baseline_impact + treatment_effect + noise_delta)
+```
+
+Default `treatment_effect = −40.0` minutes. Three assignment modes are supported:
+
+- `RANDOMIZED` — 50/50 coin flip, no confounding
+- `CONFOUNDED` — logistic propensity driven by severity
+- `LIMITED_OVERLAP` — extreme-severity episodes receive near-deterministic assignment
+
+Oracle fields are populated only when `teaching_mode=True`. `truth()` returns a `GroundTruth` object with the finite-sample ATE computed directly from potential outcomes.
+
+### Difference-in-means estimator
+
+`DifferenceInMeans` computes the naive treated-minus-control mean difference with a bootstrap 95% confidence interval. It accepts an optional `GroundTruth` for oracle comparison and returns a fully populated `EstimateResult`.
+
+Under randomization at n=1000, the estimator recovers the oracle ATE to within ~1 minute (oracle −39.2, estimate −40.0 in the reference run).
+
 ## Identification assumptions
+
 
 Every causal result in this project is conditional on the following assumptions being stated and examined:
 
