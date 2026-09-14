@@ -1,125 +1,88 @@
-# Tasks — Causal Resilience Intervention Allocator (V1)
+# Tasks — Causal Resilience Intervention Allocator (V1, Reconciled)
 
-Implementation follows five phases. Complete each phase before starting the next. Each task is independently runnable or testable.
+V1 implementation starts only after V0 has passed its pedagogical quality gate. Complete each phase before starting the next. Do not implement all tasks in one Kiro request.
 
----
+## Phase 1 — Foundation and randomized slice
 
-## Phase 1 — Small runnable slice
+* [ ] TASK-01: Set up Python project, pinned dependencies, pytest, and README skeleton.
+* [ ] TASK-02: Create package structure and configuration.
+* [ ] TASK-03: Implement Pydantic schemas for baseline covariates, state, incident episode, binary treatment, outcomes, provenance, estimand, diagnostic, and estimate result.
+* [ ] TASK-04: Implement deterministic provenance with seed, scenario id, generator version, schema version, and code revision.
+* [ ] TASK-05: Implement one structural telecom incident generator with a randomized binary contrast and `customer_impact_minutes_24h`.
+* [ ] TASK-06: Implement a hidden ground-truth oracle available only in teaching/test mode.
+* [ ] TASK-07: Test that randomized difference in means approaches known ATE as sample size grows.
+* [ ] TASK-08: Implement randomized difference in means and crude difference in means through the common result object.
+* [ ] TASK-09: Build the first Streamlit page with one estimate, uncertainty, and ground-truth comparison.
+* [ ] TASK-10: Add the first Plotly estimate comparison.
 
-- [ ] **TASK-01** Set up Python project: `pyproject.toml`, lock file (`uv` or `pip-tools`), `.gitignore`, `README.md` skeleton.
-- [ ] **TASK-02** Create `src/causal_resilience/__init__.py` and package structure matching the design.
-- [ ] **TASK-03** Implement `schemas.py`: `CaseState`, `Episode`, `Action`, `OutcomeSet`, `Provenance`, `ScenarioConfig` using pydantic.
-- [ ] **TASK-04** Implement `provenance.py`: seed, scenario id, generator version, schema version, code revision, timestamp.
-- [ ] **TASK-05** Implement `simulation/structural_model.py`: one telecom incident generator, one randomized binary contrast (`COORDINATED_RESPONSE` vs. `STANDARD_REASSESS`), one primary outcome (`customer_impact_minutes`), counterfactual oracle hidden behind a flag.
-- [ ] **TASK-06** Implement `simulation/generator.py`: entry point that calls the structural model and returns a `CaseDataset`.
-- [ ] **TASK-07** Write `tests/test_generator_ground_truth.py`: verify randomized DiM approaches known effect at large N.
-- [ ] **TASK-08** Implement `causal/baselines.py`: randomized difference in means returning `EstimateResult`.
-- [ ] **TASK-09** Implement `schemas.py` addition: `EstimateResult`, `Estimand`, `Diagnostic`, `GroundTruthComparison`.
-- [ ] **TASK-10** Create minimal `app.py` Streamlit page: load dataset, show one estimate, one ground-truth comparison chart.
-- [ ] **TASK-11** Implement `visualization.py`: one Plotly helper for naive vs. adjusted vs. ground truth bar chart.
+Exit: the app runs and displays a correct randomized estimate with clear estimand language.
 
-**Phase 1 exit criterion:** `streamlit run app.py` shows a working page with a randomized estimate and ground-truth comparison.
+## Phase 2 — Identification and foundational estimators
 
----
+* [ ] TASK-11: Add severity-driven confounded treatment assignment.
+* [ ] TASK-12: Implement the baseline DAG and distinguish baseline variables, treatment, mediators, and outcomes.
+* [ ] TASK-13: Implement target-trial and estimand objects for the primary binary contrast.
+* [ ] TASK-14: Implement exchangeability, positivity, consistency, and temporal-ordering checks as warnings/diagnostics.
+* [ ] TASK-15: Implement covariate balance, overlap, and positivity diagnostics.
+* [ ] TASK-16: Implement stratified adjustment.
+* [ ] TASK-17: Implement outcome regression and standardization/g-formula.
+* [ ] TASK-18: Implement propensity modelling and IPW with effective sample size.
+* [ ] TASK-19: Add repeated-seed tests comparing estimators with known ground truth.
+* [ ] TASK-20: Add collider, limited-overlap, and invalid-adjustment tests.
+* [ ] TASK-21: Add course lessons for potential outcomes, randomization, confounding, assumptions, and DAGs.
+* [ ] TASK-22: Add Plotly DAG, balance, overlap, and weight visualizations.
 
-## Phase 2 — Core causal curriculum
+Exit: under confounding, the UI visibly distinguishes naive from adjusted estimates and warns when assumptions/overlap fail.
 
-- [ ] **TASK-12** Implement `simulation/structural_model.py` extension: observational (severity-driven) treatment assignment with configurable confounding strength.
-- [ ] **TASK-13** Implement `causal/dag.py`: DAG definition, backdoor path enumeration, adjustment-set validation, collider detection.
-- [ ] **TASK-14** Implement `causal/estimands.py`: `TargetTrial`, `EligibilityRule`, `TimeZeroRule`, `TreatmentStrategy`, `OutcomeDefinition`, `FollowUpDefinition`, `CensoringDefinition`, `Assumption`.
-- [ ] **TASK-15** Implement `causal/identification.py`: exchangeability, positivity, consistency, temporal-ordering checks; return warnings not errors.
-- [ ] **TASK-16** Implement `causal/diagnostics.py`: covariate balance (SMD), overlap check, positivity warning.
-- [ ] **TASK-17** Implement `causal/baselines.py` extension: crude observational DiM, stratified adjustment.
-- [ ] **TASK-18** Implement `causal/standardization.py`: outcome regression (statsmodels GLM) + g-formula standardization over target covariate distribution.
-- [ ] **TASK-19** Implement `causal/ipw.py`: propensity model (scikit-learn logistic), IPW, stabilized weights, effective sample size.
-- [ ] **TASK-20** Write `tests/test_identification.py`: collider adjustment creates bias, valid adjustment set reduces bias, absent overlap triggers warning.
-- [ ] **TASK-21** Write `tests/test_static_estimators.py`: standardization and IPW agree within tolerance on randomized scenario; repeated-seed benchmark.
-- [ ] **TASK-22** Write `tests/test_diagnostics.py`: balance improves after IPW weighting; positivity warning fires when overlap is absent.
-- [ ] **TASK-23** Add course-mode lessons 1–5 to `app.py` (tabs or pages), each with target-trial card, DAG view, and estimate panel.
-- [ ] **TASK-24** Implement `visualization.py` additions: DAG chart (Plotly or graphviz), covariate balance chart, propensity overlap plot, IPW weight distribution.
+## Phase 3 — Telecom dynamic world and adapter contract
 
-**Phase 2 exit criterion:** Lessons 1–5 run end-to-end; naive vs. adjusted comparison is visibly different under confounding.
+* [ ] TASK-23: Implement transition functions for all supported disturbance types.
+* [ ] TASK-24: Implement the `DomainAdapter` protocol.
+* [ ] TASK-25: Implement the telecom adapter with six roles and seven operational protocols.
+* [ ] TASK-26: Implement explicit eligibility rules and hard safety/security constraints.
+* [ ] TASK-27: Implement policy execution with state transitions, queues, capacity, and resource tracking.
+* [ ] TASK-28: Add controlled measurement error, selection, missingness, treatment-version mismatch, post-treatment variables, and concurrent-episode warning scenarios. Do not add longitudinal causal estimators.
+* [ ] TASK-29: Add adapter contract tests for deterministic generation, valid time ordering, feasible actions, target-trial availability, explanations, and provenance.
+* [ ] TASK-30: Add sandbox controls for seed, sample size, disturbance mix, confounding, overlap, measurement error, missingness, capacity, and policy weights.
+* [ ] TASK-31: Add incident timeline and capacity/constraint visualizations.
+* [ ] TASK-32: Add course lessons for selection, measurement error, and effect modification.
 
----
+Exit: full telecom episodes render, all roles appear, disturbance scenarios remain safe and abstract, and contract tests pass.
 
-## Phase 3 — Dynamic telecom realism
+## Phase 4 — Heterogeneity, policy simulation, and explanations
 
-- [ ] **TASK-25** Implement `simulation/transitions.py`: full state-transition model for all disturbance types (equipment failure, software regression, misconfiguration, overload, weather, cyberattack, vandalism).
-- [ ] **TASK-26** Implement `domain/adapter.py`: `DomainAdapter` Protocol with all methods from the design.
-- [ ] **TASK-27** Implement `domain/telecom_resilience.py`: telecom adapter — all six roles, all seven intervention protocols, eligibility rules, telecom-specific outcomes and constraints.
-- [ ] **TASK-28** Implement `simulation/structural_model.py` extension: full bias and failure scenario support (measurement error, missingness, informative censoring, selection, treatment-version mismatch, post-treatment variables, concurrent episodes with interference warning).
-- [ ] **TASK-29** Implement `simulation/policies.py`: policy execution loop over state transitions, queue and capacity model, shared resource tracking.
-- [ ] **TASK-30** Implement `policy/constraints.py`: capacity, skill/permission/certification, field access and safety, security eligibility, budget, max concurrent changes, queue/backlog limits, SLA priorities, fallback rules.
-- [ ] **TASK-31** Write `tests/test_adapter_contract.py`: domain-neutral contract tests — schema validity, deterministic generation, valid time ordering, valid action/outcome types, feasible-action behavior, constraint behavior, target-trial availability, explanation and provenance fields.
-- [ ] **TASK-32** Add sandbox controls to `app.py`: seed, sample size, disturbance mix, confounding strength, overlap mode, measurement error, missingness, censoring, capacity, policy objective weights, estimator and adjustment set.
-- [ ] **TASK-33** Implement `visualization.py` additions: incident timeline chart, capacity and constraint dashboard.
-- [ ] **TASK-34** Add course-mode lessons 6–9 to `app.py`.
+* [ ] TASK-33: Implement doubly robust estimation for supported static contrasts; document cross-fitting limitations.
+* [ ] TASK-34: Implement subgroup effects/CATE with support diagnostics and model-dependence warnings.
+* [ ] TASK-35: Implement policy value for explicitly defined simulated/held-out policies.
+* [ ] TASK-36: Implement constrained allocator over operational protocols; enforce hard constraints and report infeasibility.
+* [ ] TASK-37: Add current-practice, severity-only, predictive-risk, causal-effect, value-per-resource, and teaching-only oracle policies.
+* [ ] TASK-38: Implement analysis cards, reason codes, audit export, and provenance display.
+* [ ] TASK-39: Add lessons for outcome regression, IPW, doubly robust estimation, heterogeneity, policy value, and audit/limitations.
+* [ ] TASK-40: Add subgroup, simulated counterfactual, policy-value, trade-off, and assumption-warning visualizations.
+* [ ] TASK-41: Test policy support warnings, Monte Carlo error, capacity, budget, safety, security, and oracle isolation.
 
-**Phase 3 exit criterion:** Full episode timeline renders; cyberattack and vandalism scenarios run without offensive content; all six roles appear in the domain model.
+Exit: all 13 lessons run and every policy result is clearly labelled as causal estimation, policy value, or structural simulation.
 
----
+## Phase 5 — Hardening and public release
 
-## Phase 4 — Doubly robust and policy layer
+* [ ] TASK-42: Add schema validation tests.
+* [ ] TASK-43: Add reproducibility tests.
+* [ ] TASK-44: Add deliberate-bias tests for naive confounding, collider adjustment, measurement error, and selection/missingness demonstrations.
+* [ ] TASK-45: Add temporal leakage tests; ensure future outcomes and post-treatment variables do not enter baseline adjustment silently.
+* [ ] TASK-46: Complete data dictionary, causal questions, assumptions, limitations, and visualization guide.
+* [ ] TASK-47: Complete README with educational purpose, synthetic-data limitation, installation, course, sandbox, tests, and reproducibility.
+* [ ] TASK-48: Perform accessibility and color-blind review.
+* [ ] TASK-49: Add clean-environment CI and Streamlit startup check.
+* [ ] TASK-50: Create `docs/v1_release_acceptance.md` with exactly 26 explicit criteria.
+* [ ] TASK-51: Add source header blocks to causal modules and document textbook/software differences.
+* [ ] TASK-52: Perform final methodological review against the reconciled requirements and design.
 
-- [ ] **TASK-35** Implement `causal/doubly_robust.py`: DR estimator, cross-fitting where appropriate, behavior under one misspecified nuisance model.
-- [ ] **TASK-36** Implement `causal/heterogeneity.py`: subgroup effect estimation, CATE via EconML (DR learner or causal forest), counterfactual outcome distribution.
-- [ ] **TASK-37** Implement `policy/value.py`: policy value V(π) on held-out episodes, positivity warning for out-of-support actions, oracle policy in teaching mode only.
-- [ ] **TASK-38** Implement `policy/allocator.py`: constrained intervention allocator — maximize objective, respect all hard constraints, never violate safety or security constraints, report infeasibility explicitly.
-- [ ] **TASK-39** Implement `explanations.py`: analysis card builder, reason codes, audit export with full provenance.
-- [ ] **TASK-40** Write `tests/test_policy_value.py`: policy value agrees with oracle simulation within documented Monte Carlo error; positivity warning fires for out-of-support actions.
-- [ ] **TASK-41** Write `tests/test_allocator.py`: allocator never exceeds capacity or budget; never dispatches Field Operations when safety fails; never assigns SOC to ineligible incident; never uses oracle in normal mode.
-- [ ] **TASK-42** Add course-mode lessons 10–13 to `app.py`.
-- [ ] **TASK-43** Implement `visualization.py` additions: subgroup-effect forest/dot plot, counterfactual outcome distribution, policy-value comparison, policy trade-off frontier, assumption warning panel.
+Exit: all 26 acceptance criteria pass, tests pass in a clean environment, and the release documentation does not overclaim methods or source access.
 
-**Phase 4 exit criterion:** All 13 lessons run; DR estimator, policy allocator, and analysis card are functional; allocator safety tests pass.
+## Deferred after V1
 
----
+Instrumental variables, causal survival, mediation, time-varying treatment, treatment-confounder feedback, marginal structural models, g-estimation, a second industry adapter, R validation, and Rust implementation.
 
-## Phase 5 — Public-release hardening
+## Kiro execution rule
 
-- [ ] **TASK-44** Write `tests/test_schemas.py`: schema validation, required fields, pydantic contract.
-- [ ] **TASK-45** Write `tests/test_reproducibility.py`: same config produces identical dataset and results; provenance fields are complete.
-- [ ] **TASK-46** Write deliberate bias tests in `tests/test_static_estimators.py`: naive comparison biased under confounding by indication; collider adjustment increases bias; measurement error changes result in controlled direction; selection and censoring scenarios differ from complete-data scenario.
-- [ ] **TASK-47** Write temporal safety tests in `tests/test_generator_ground_truth.py`: state histories are ordered; future outcomes cannot leak into baseline covariates; every executed action was feasible at execution time; post-treatment variables are not silently included in baseline adjustment.
-- [ ] **TASK-48** Complete `docs/data_dictionary.md`, `docs/assumptions.md`, `docs/limitations.md`, `docs/causal_questions.md`, `docs/visualization_guide.md`.
-- [ ] **TASK-49** Complete `README.md`: use case, educational purpose, synthetic-data limitation, install commands, `streamlit run app.py`, `pytest`, dataset regeneration, chart reproduction, estimator benchmark, policy-allocation demo.
-- [ ] **TASK-50** Accessibility review: every chart uses labels/symbols/annotations in addition to color; color-blind palette check.
-- [ ] **TASK-51** Clean-environment CI: install from lock file, run full test suite, verify `streamlit run app.py` starts without error.
-- [ ] **TASK-52** Final check against V1 release acceptance criteria (spec section 26): all 26 criteria must be met before tagging the release.
-
-**Phase 5 exit criterion:** All tests pass in a clean environment; README is complete; all 26 release acceptance criteria are satisfied.
-
----
-
-## Deferred (post-V1)
-
-- Instrumental variables
-- Causal survival analysis and censoring-weighted survival estimands
-- Causal mediation (VanderWeele source reserved for this)
-- Time-varying treatment and treatment-confounder feedback
-- Marginal structural models, g-estimation
-- Second industry adapter
-- R-based validation
-
----
-
-## Source documentation tasks (per module)
-
-For each implemented module, add a source header block identifying:
-
-- Relevant source and section (e.g., *What If* Chapter 2)
-- Causal question and estimand being taught
-- Identification assumptions required
-- Whether implementation is educational, library-based, or both
-- Simulator ground truth and validation test reference
-- Any material difference between textbook method and software implementation
-
-- [ ] **TASK-53** Add source header to `causal/baselines.py` (*What If* Ch. 1–2)
-- [ ] **TASK-54** Add source header to `causal/standardization.py` (*What If* Ch. 13)
-- [ ] **TASK-55** Add source header to `causal/ipw.py` (*What If* Ch. 12)
-- [ ] **TASK-56** Add source header to `causal/doubly_robust.py` (*What If* Ch. 13 + EconML DR learner)
-- [ ] **TASK-57** Add source header to `causal/heterogeneity.py` (*What If* Ch. 5 + EconML CATE)
-- [ ] **TASK-58** Add source header to `causal/dag.py` (Pearl *Causality* Ch. 1–3, supplementary)
-- [ ] **TASK-59** Add source header to `policy/value.py` (*What If* Ch. 4 + EconML policy)
-- [ ] **TASK-60** Add source header to `policy/allocator.py` (domain constraints, no causal-inference source claim)
-- [ ] **TASK-61** Update `docs/limitations.md` to explicitly state: which books were fully available vs. bibliographic references only; which methods are implemented vs. conceptually demonstrated vs. deferred.
+Execute one vertical slice at a time. For each slice, return the changed files, tests run, test output summary, screenshots or visual notes, assumptions introduced, and any unresolved methodological question. Do not begin the next slice until the previous exit criterion is reviewed.
