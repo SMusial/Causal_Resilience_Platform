@@ -137,10 +137,106 @@ LESSON_2 = LessonContent(
 
 
 # ---------------------------------------------------------------------------
+# Lesson 3 — Randomization: when association can identify causation
+# ---------------------------------------------------------------------------
+
+LESSON_3 = LessonContent(
+    lesson_id="L3",
+    title="Randomization: when association can identify causation",
+    objective=(
+        "Explain why randomization supports exchangeability and why a "
+        "difference in observed means estimates the ATE under randomization."
+    ),
+    explanation=(
+        "Under randomized assignment, treatment is allocated independently of "
+        "severity and all other baseline characteristics. This means:\n"
+        "  Y(a) ⊥ A  (unconditional exchangeability)\n\n"
+        "When exchangeability holds, the observed group means identify the "
+        "potential-outcome means:\n"
+        "  E[Y | A=1] = E[Y(1)]\n"
+        "  E[Y | A=0] = E[Y(0)]\n\n"
+        "So the crude difference in means estimates the ATE:\n"
+        "  E[Y | A=1] − E[Y | A=0] = E[Y(1)] − E[Y(0)] = ATE\n\n"
+        "Finite samples still vary — the estimate will not equal the oracle "
+        "ATE exactly, but the error shrinks as sample size grows.\n\n"
+        "Source: Hernán & Robins, What If, Chapter 2 (§2.1–2.2)."
+    ),
+    visual_keys=["outcome_distributions", "estimate_vs_oracle", "severity_balance"],
+    estimate_or_diagnostic=(
+        "Compare the difference-in-means estimate with the oracle ATE. "
+        "Check the severity balance chart — under randomization the severity "
+        "distributions of treated and control groups should overlap closely."
+    ),
+    interpretation=(
+        "Under randomization the estimate tracks the oracle ATE. "
+        "The severity distributions are balanced by design, not by adjustment. "
+        "Remaining error is sampling variability, not confounding bias."
+    ),
+    reflection=(
+        "Why does balance on severity not need to be perfect for randomization "
+        "to support a causal interpretation? "
+        "What happens to the estimate as you increase the sample size?"
+    ),
+    source_reference="Hernán & Robins, What If, Chapter 2 (§2.1–2.2)",
+)
+
+
+# ---------------------------------------------------------------------------
+# Lesson 4 — Confounding and the DAG
+# ---------------------------------------------------------------------------
+
+LESSON_4 = LessonContent(
+    lesson_id="L4",
+    title="Confounding and the DAG",
+    objective=(
+        "Explain why a crude observational comparison may not estimate the ATE "
+        "when a common cause of treatment and outcome is present."
+    ),
+    explanation=(
+        "A confounder is a variable that is a common cause of both treatment "
+        "assignment and the outcome. In the V0 scenario, severity plays this role:\n\n"
+        "  severity ──> treatment\n"
+        "  severity ──> outcome\n"
+        "  treatment ──> outcome\n\n"
+        "Higher-severity incidents are more likely to receive "
+        "EARLY_COORDINATED_RESPONSE and also tend to have higher "
+        "customer_impact_minutes_24h regardless of treatment.\n\n"
+        "This creates a backdoor path: treatment ← severity → outcome.\n"
+        "The crude difference in means conflates the treatment effect with "
+        "the severity effect, producing a biased estimate of the ATE.\n\n"
+        "A directed acyclic graph (DAG) makes the confounding structure "
+        "explicit and guides the choice of adjustment strategy.\n\n"
+        "Source: Hernán & Robins, What If, Chapter 6 (§6.1–6.3)."
+    ),
+    visual_keys=["dag", "severity_balance", "crude_vs_oracle"],
+    estimate_or_diagnostic=(
+        "Switch to confounded assignment. Observe that the severity "
+        "distributions diverge between treatment groups. Compare the crude "
+        "difference-in-means with the oracle ATE — the gap is confounding bias."
+    ),
+    interpretation=(
+        "Under confounded assignment, higher-severity incidents cluster in the "
+        "treated group. The crude estimate is pulled toward a larger (more "
+        "negative) value than the true ATE because treated episodes would have "
+        "had worse outcomes even without treatment. Adjustment for severity "
+        "is required — introduced in Lesson 5."
+    ),
+    reflection=(
+        "If you did not know the DGP, how would you decide whether severity "
+        "is a confounder? "
+        "Why does a statistically precise estimate not rule out confounding bias?"
+    ),
+    source_reference="Hernán & Robins, What If, Chapter 6 (§6.1–6.3)",
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
 LESSONS: dict[str, LessonContent] = {
     LESSON_1.lesson_id: LESSON_1,
     LESSON_2.lesson_id: LESSON_2,
+    LESSON_3.lesson_id: LESSON_3,
+    LESSON_4.lesson_id: LESSON_4,
 }

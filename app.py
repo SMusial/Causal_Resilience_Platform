@@ -12,7 +12,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Any
 
 from causal_resilience.foundations.schemas import (
     AssignmentMode,
@@ -21,7 +20,8 @@ from causal_resilience.foundations.schemas import (
 )
 from causal_resilience.foundations.dgp import TelecomFoundationsDGP
 from causal_resilience.foundations.estimators import DifferenceInMeans, EstimatorConfig
-from causal_resilience.foundations.lessons import LESSON_1, LESSON_2
+from causal_resilience.foundations.lessons import LESSON_1, LESSON_2, LESSON_3, LESSON_4
+from causal_resilience.foundations.tables import build_po_table_rows, render_po_table
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -47,6 +47,22 @@ seed = st.sidebar.number_input("Random seed", min_value=0, max_value=99_999, val
 n_episodes = st.sidebar.slider("Episodes", min_value=50, max_value=5_000, value=500, step=50)
 teaching_mode = st.sidebar.toggle("Teaching mode (show oracle)", value=False)
 
+assignment_mode_label = st.sidebar.selectbox(
+    "Assignment mode",
+    ["Randomized", "Confounded"],
+    index=0,
+)
+assignment_mode = (
+    AssignmentMode.RANDOMIZED if assignment_mode_label == "Randomized"
+    else AssignmentMode.CONFOUNDED
+)
+
+confounding_strength = 3.0
+if assignment_mode == AssignmentMode.CONFOUNDED:
+    confounding_strength = st.sidebar.slider(
+        "Confounding strength", min_value=1.0, max_value=8.0, value=3.0, step=0.5
+    )
+
 if teaching_mode:
     st.sidebar.info("⚠️ **Teaching mode ON** — oracle / simulator truth is visible. "
                     "These values are not available in real data.")
@@ -54,9 +70,10 @@ if teaching_mode:
 config = ScenarioConfig(
     seed=int(seed),
     n_episodes=int(n_episodes),
-    assignment_mode=AssignmentMode.RANDOMIZED,
+    assignment_mode=assignment_mode,
+    confounding_strength=confounding_strength,
     teaching_mode=teaching_mode,
-    scenario_id="v0-slice3",
+    scenario_id="v0-slice4",
 )
 
 dataset = _DGP.generate(config)
@@ -68,90 +85,84 @@ est_config = EstimatorConfig(bootstrap_iterations=1000, bootstrap_seed=0)
 result = _ESTIMATOR.estimate(dataset, _ESTIMAND, est_config, ground_truth=ground_truth)
 
 # ---------------------------------------------------------------------------
-# Potential-outcome table helpers (Lesson 2)
+# Shared chart helpers
 # ---------------------------------------------------------------------------
 
-# Cell styles — no color-only encoding; text labels carry the meaning.
-_STYLE_OBSERVED = (
-    "background-color:#dbeafe; color:#1e3a5f; font-weight:bold; "
-    "border:2px solid #2563eb; padding:4px 8px;"
-)
-_STYLE_COUNTERFACTUAL = (
-    "background-color:#f0f0f0; color:#1a1a1a; "
-    "border:1px dashed #6b7280; padding:4px 8px;"
-)
-_STYLE_PLAIN = "padding:4px 8px; color:#1a1a1a; background-color:#ffffff;"
-_STYLE_TH = (
-    "background-color:#1e3a5f; color:#ffffff; font-weight:bold; "
-    "padding:6px 8px; text-align:left;"
-)
-
-
-def _build_po_table_rows(sample: pd.DataFrame) -> list[dict[str, Any]]:
-    """
-    Pure function: convert a sample DataFrame into a list of row dicts
-    with 'observed' and 'counterfactual' flags for each potential-outcome cell.
-
-    Each row dict has keys:
-      episode, severity, treatment,
-      y0_value, y0_observed (bool),
-      y1_value, y1_observed (bool),
-      outcome
-    """
-    rows = []
-    for _, r in sample.iterrows():
-        treated = r["treatment_label"] == "EARLY_COORDINATED_RESPONSE"
-        rows.append({
-            "episode": r["episode_id"],
-            "severity": f"{r['severity']:.2f}",
-            "treatment": "ECR" if treated else "MR",
-            "y0_value": f"{r['potential_outcome_0']:.1f}",
-            "y0_observed": not treated,
-            "y1_value": f"{r['potential_outcome_1']:.1f}",
-            "y1_observed": treated,
-            "outcome": f"{r['outcome']:.1f}",
-        })
-    return rows
-
-
-def _render_po_table(sample: pd.DataFrame) -> str:
-    """Render the potential-outcome table as an accessible HTML string."""
-    rows = _build_po_table_rows(sample)
-    headers = [
-        "Episode", "Severity", "Assigned treatment",
-        "Y(0) oracle", "Y(1) oracle", "Observed outcome",
-    ]
-    th_cells = "".join(f"<th style='{_STYLE_TH}'>{h}</th>" for h in headers)
-    html_rows = []
-    for row in rows:
-        def _cell(value: str, observed: bool, label: str) -> str:
-            if observed:
-                return (
-                    f"<td style='{_STYLE_OBSERVED}'>"
-                    f"&#9733; {value}<br><small>observed</small></td>"
-                )
-            return (
-                f"<td style='{_STYLE_COUNTERFACTUAL}'>"
-                f"{value}<br><small>[missing]</small></td>"
-            )
-
-        html_rows.append(
-            "<tr>"
-            f"<td style='{_STYLE_PLAIN}'>{row['episode']}</td>"
-            f"<td style='{_STYLE_PLAIN}'>{row['severity']}</td>"
-            f"<td style='{_STYLE_PLAIN}'>{row['treatment']}</td>"
-            + _cell(row["y0_value"], row["y0_observed"], "Y(0)")
-            + _cell(row["y1_value"], row["y1_observed"], "Y(1)")
-            + f"<td style='{_STYLE_OBSERVED}'>{row['outcome']}<br><small>observed</small></td>"
-            "</tr>"
-        )
-
-    return (
-        "<table style='border-collapse:collapse; width:100%; font-size:0.9rem;'>"
-        f"<thead><tr>{th_cells}</tr></thead>"
-        f"<tbody>{''.join(html_rows)}</tbody>"
-        "</table>"
+def _show_estimate_chart(result, ground_truth, teaching_mode: bool) -> None:
+    """Estimate + 95% CI chart with optional oracle marker."""
+    ci = result.confidence_interval or (result.estimate, result.estimate)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[result.estimate], y=["Difference in means"],
+        mode="markers", name="Estimate",
+        marker=dict(symbol="diamond", size=14, color="#1f77b4"),
+        error_x=dict(
+            type="data", symmetric=False,
+            array=[ci[1] - result.estimate],
+            arrayminus=[result.estimate - ci[0]],
+            color="#1f77b4",
+        ),
+    ))
+    if teaching_mode and result.oracle_comparison is not None:
+        fig.add_trace(go.Scatter(
+            x=[result.oracle_comparison.oracle_ate], y=["Difference in means"],
+            mode="markers", name="Oracle ATE (teaching mode)",
+            marker=dict(symbol="star", size=14, color="#ff7f0e"),
+        ))
+    fig.add_vline(x=0, line_dash="dash", line_color="#888",
+                  annotation_text="No effect", annotation_position="top right")
+    fig.update_layout(
+        title="ATE estimate with 95% bootstrap CI (negative = beneficial)",
+        xaxis_title="customer_impact_minutes_24h (mean difference)",
+        yaxis=dict(visible=False), height=220,
+        margin=dict(t=50, b=40),
+        legend=dict(orientation="h", y=-0.3),
     )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _render_dag() -> go.Figure:
+    """V0 baseline DAG: severity → treatment, severity → outcome, treatment → outcome."""
+    nodes = {"severity": (0.0, 1.0), "treatment": (1.0, 1.0), "outcome": (2.0, 1.0)}
+    edges = [
+        ("severity", "treatment", "#e67e22", "Confounder"),
+        ("severity", "outcome",   "#e67e22", "Confounder"),
+        ("treatment", "outcome",  "#2563eb", "Causal path"),
+    ]
+    fig = go.Figure()
+    for src, dst, color, label in edges:
+        x0, y0 = nodes[src]
+        x1, y1 = nodes[dst]
+        fig.add_annotation(
+            x=x1, y=y1, ax=x0, ay=y0,
+            xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=3, arrowsize=1.5,
+            arrowwidth=2.5, arrowcolor=color,
+        )
+    for name, (x, y) in nodes.items():
+        color = "#e67e22" if name == "severity" else "#2563eb"
+        fig.add_trace(go.Scatter(
+            x=[x], y=[y], mode="markers+text",
+            text=[name], textposition="top center",
+            marker=dict(size=28, color=color, line=dict(color="white", width=2)),
+            showlegend=False,
+        ))
+    # Legend entries
+    for color, label in [("#e67e22", "Confounder path (backdoor)"), ("#2563eb", "Causal path")]:
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="lines",
+            line=dict(color=color, width=3),
+            name=label,
+        ))
+    fig.update_layout(
+        title="V0 baseline DAG: severity is a common cause of treatment and outcome",
+        xaxis=dict(visible=False, range=[-0.5, 2.5]),
+        yaxis=dict(visible=False, range=[0.5, 1.5]),
+        height=280, margin=dict(t=50, b=20),
+        legend=dict(orientation="h", y=-0.05),
+        plot_bgcolor="white",
+    )
+    return fig
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +171,13 @@ def _render_po_table(sample: pd.DataFrame) -> str:
 
 page = st.sidebar.radio(
     "Course",
-    ["Lesson 1 — Causal question", "Lesson 2 — Potential outcomes", "Sandbox"],
+    [
+        "Lesson 1 — Causal question",
+        "Lesson 2 — Potential outcomes",
+        "Lesson 3 — Randomization",
+        "Lesson 4 — Confounding and the DAG",
+        "Sandbox",
+    ],
     index=0,
 )
 
@@ -248,7 +265,7 @@ elif page == "Lesson 2 — Potential outcomes":
              "potential_outcome_0", "potential_outcome_1", "outcome"]
         ].copy()
         st.markdown(
-            _render_po_table(sample),
+            render_po_table(sample),
             unsafe_allow_html=True,
         )
         st.caption(
@@ -315,6 +332,109 @@ elif page == "Lesson 2 — Potential outcomes":
 
     st.subheader("Reflection")
     st.info(LESSON_2.reflection)
+
+
+# ===========================================================================
+# LESSON 3
+# ===========================================================================
+
+elif page == "Lesson 3 — Randomization":
+    st.title(f"Lesson 3: {LESSON_3.title}")
+    st.caption(f"Source: {LESSON_3.source_reference}")
+    if assignment_mode != AssignmentMode.RANDOMIZED:
+        st.warning(⁠"Set **Assignment mode** to Randomized in the sidebar for this lesson.")
+
+    st.subheader("Learning objective")
+    st.write(LESSON_3.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_3.explanation)
+
+    # --- Severity balance ---
+    st.subheader("Severity balance by treatment group")
+    fig_bal = go.Figure()
+    for label, color, dash in [
+        ("EARLY_COORDINATED_RESPONSE", "#2ca02c", "solid"),
+        ("MONITOR_REASSESS", "#d62728", "dash"),
+    ]:
+        grp = df[df["treatment_label"].astype(str) == label]["severity"]
+        fig_bal.add_trace(go.Histogram(
+            x=grp, name=label, opacity=0.7, nbinsx=20,
+            marker_color=color,
+        ))
+    fig_bal.update_layout(
+        barmode="overlay",
+        title="Severity distribution by treatment group",
+        xaxis_title="Severity", yaxis_title="Count",
+        legend=dict(orientation="h", y=-0.25), height=320,
+    )
+    st.plotly_chart(fig_bal, use_container_width=True)
+    st.caption("Under randomization the two distributions should overlap closely.")
+
+    # --- Estimate vs oracle ---
+    st.subheader("Estimate vs. oracle ATE")
+    _show_estimate_chart(result, ground_truth, teaching_mode)
+
+    st.subheader("Reflection")
+    st.info(LESSON_3.reflection)
+
+
+# ===========================================================================
+# LESSON 4
+# ===========================================================================
+
+elif page == "Lesson 4 — Confounding and the DAG":
+    st.title(f"Lesson 4: {LESSON_4.title}")
+    st.caption(f"Source: {LESSON_4.source_reference}")
+    if assignment_mode != AssignmentMode.CONFOUNDED:
+        st.warning("Set **Assignment mode** to Confounded in the sidebar for this lesson.")
+
+    st.subheader("Learning objective")
+    st.write(LESSON_4.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_4.explanation)
+
+    # --- DAG ---
+    st.subheader("Causal DAG")
+    st.plotly_chart(_render_dag(), use_container_width=True)
+    st.caption(
+        "The backdoor path treatment ← severity → outcome opens a non-causal "
+        "association between treatment and outcome."
+    )
+
+    # --- Severity balance ---
+    st.subheader("Severity balance by treatment group")
+    fig_bal4 = go.Figure()
+    for label, color in [
+        ("EARLY_COORDINATED_RESPONSE", "#2ca02c"),
+        ("MONITOR_REASSESS", "#d62728"),
+    ]:
+        grp = df[df["treatment_label"].astype(str) == label]["severity"]
+        fig_bal4.add_trace(go.Histogram(
+            x=grp, name=label, opacity=0.7, nbinsx=20,
+            marker_color=color,
+        ))
+    fig_bal4.update_layout(
+        barmode="overlay",
+        title="Severity distribution by treatment group (confounded)",
+        xaxis_title="Severity", yaxis_title="Count",
+        legend=dict(orientation="h", y=-0.25), height=320,
+    )
+    st.plotly_chart(fig_bal4, use_container_width=True)
+    st.caption("Under confounding, higher-severity episodes cluster in the treated group.")
+
+    # --- Crude vs oracle ---
+    st.subheader("Crude estimate vs. oracle ATE")
+    _show_estimate_chart(result, ground_truth, teaching_mode)
+    if teaching_mode and result.oracle_comparison is not None:
+        bias = result.estimate - result.oracle_comparison.oracle_ate
+        st.info(
+            f"Confounding bias ≈ **{bias:+.1f} minutes** "
+            f"(crude {result.estimate:.1f} − oracle {result.oracle_comparison.oracle_ate:.1f}). "
+            "Adjustment for severity is introduced in Lesson 5."
+        )
+
+    st.subheader("Reflection")
+    st.info(LESSON_4.reflection)
 
 
 # ===========================================================================
@@ -386,38 +506,7 @@ else:
 
     # --- Estimate chart ---
     st.subheader("Estimate and uncertainty")
-    ci = result.confidence_interval or (result.estimate, result.estimate)
-
-    fig_est = go.Figure()
-    fig_est.add_trace(go.Scatter(
-        x=[result.estimate], y=["Difference in means"],
-        mode="markers", name="Estimate",
-        marker=dict(symbol="diamond", size=14, color="#1f77b4"),
-        error_x=dict(
-            type="data",
-            symmetric=False,
-            array=[ci[1] - result.estimate],
-            arrayminus=[result.estimate - ci[0]],
-            color="#1f77b4",
-        ),
-    ))
-    if teaching_mode and result.oracle_comparison is not None:
-        fig_est.add_trace(go.Scatter(
-            x=[result.oracle_comparison.oracle_ate], y=["Difference in means"],
-            mode="markers", name="Oracle ATE (teaching mode)",
-            marker=dict(symbol="star", size=14, color="#ff7f0e"),
-        ))
-    fig_est.add_vline(x=0, line_dash="dash", line_color="#888",
-                      annotation_text="No effect", annotation_position="top right")
-    fig_est.update_layout(
-        title="ATE estimate with 95% bootstrap CI (negative = beneficial)",
-        xaxis_title="customer_impact_minutes_24h (mean difference)",
-        yaxis=dict(visible=False),
-        height=220,
-        margin=dict(t=50, b=40),
-        legend=dict(orientation="h", y=-0.3),
-    )
-    st.plotly_chart(fig_est, use_container_width=True)
+    _show_estimate_chart(result, ground_truth, teaching_mode)
 
     # --- Warnings ---
     if result.has_warnings:
