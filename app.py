@@ -342,7 +342,7 @@ elif page == "Lesson 3 — Randomization":
     st.title(f"Lesson 3: {LESSON_3.title}")
     st.caption(f"Source: {LESSON_3.source_reference}")
     if assignment_mode != AssignmentMode.RANDOMIZED:
-        st.warning(⁠"Set **Assignment mode** to Randomized in the sidebar for this lesson.")
+        st.warning("Set **Assignment mode** to Randomized in the sidebar for this lesson.")
 
     st.subheader("Learning objective")
     st.write(LESSON_3.objective)
