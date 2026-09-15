@@ -12,6 +12,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+from typing import Any
 
 from causal_resilience.foundations.schemas import (
     AssignmentMode,
@@ -65,6 +66,93 @@ ground_truth = _DGP.truth(dataset) if teaching_mode else None
 
 est_config = EstimatorConfig(bootstrap_iterations=1000, bootstrap_seed=0)
 result = _ESTIMATOR.estimate(dataset, _ESTIMAND, est_config, ground_truth=ground_truth)
+
+# ---------------------------------------------------------------------------
+# Potential-outcome table helpers (Lesson 2)
+# ---------------------------------------------------------------------------
+
+# Cell styles — no color-only encoding; text labels carry the meaning.
+_STYLE_OBSERVED = (
+    "background-color:#dbeafe; color:#1e3a5f; font-weight:bold; "
+    "border:2px solid #2563eb; padding:4px 8px;"
+)
+_STYLE_COUNTERFACTUAL = (
+    "background-color:#f0f0f0; color:#1a1a1a; "
+    "border:1px dashed #6b7280; padding:4px 8px;"
+)
+_STYLE_PLAIN = "padding:4px 8px; color:#1a1a1a; background-color:#ffffff;"
+_STYLE_TH = (
+    "background-color:#1e3a5f; color:#ffffff; font-weight:bold; "
+    "padding:6px 8px; text-align:left;"
+)
+
+
+def _build_po_table_rows(sample: pd.DataFrame) -> list[dict[str, Any]]:
+    """
+    Pure function: convert a sample DataFrame into a list of row dicts
+    with 'observed' and 'counterfactual' flags for each potential-outcome cell.
+
+    Each row dict has keys:
+      episode, severity, treatment,
+      y0_value, y0_observed (bool),
+      y1_value, y1_observed (bool),
+      outcome
+    """
+    rows = []
+    for _, r in sample.iterrows():
+        treated = r["treatment_label"] == "EARLY_COORDINATED_RESPONSE"
+        rows.append({
+            "episode": r["episode_id"],
+            "severity": f"{r['severity']:.2f}",
+            "treatment": "ECR" if treated else "MR",
+            "y0_value": f"{r['potential_outcome_0']:.1f}",
+            "y0_observed": not treated,
+            "y1_value": f"{r['potential_outcome_1']:.1f}",
+            "y1_observed": treated,
+            "outcome": f"{r['outcome']:.1f}",
+        })
+    return rows
+
+
+def _render_po_table(sample: pd.DataFrame) -> str:
+    """Render the potential-outcome table as an accessible HTML string."""
+    rows = _build_po_table_rows(sample)
+    headers = [
+        "Episode", "Severity", "Assigned treatment",
+        "Y(0) oracle", "Y(1) oracle", "Observed outcome",
+    ]
+    th_cells = "".join(f"<th style='{_STYLE_TH}'>{h}</th>" for h in headers)
+    html_rows = []
+    for row in rows:
+        def _cell(value: str, observed: bool, label: str) -> str:
+            if observed:
+                return (
+                    f"<td style='{_STYLE_OBSERVED}'>"
+                    f"&#9733; {value}<br><small>observed</small></td>"
+                )
+            return (
+                f"<td style='{_STYLE_COUNTERFACTUAL}'>"
+                f"{value}<br><small>[missing]</small></td>"
+            )
+
+        html_rows.append(
+            "<tr>"
+            f"<td style='{_STYLE_PLAIN}'>{row['episode']}</td>"
+            f"<td style='{_STYLE_PLAIN}'>{row['severity']}</td>"
+            f"<td style='{_STYLE_PLAIN}'>{row['treatment']}</td>"
+            + _cell(row["y0_value"], row["y0_observed"], "Y(0)")
+            + _cell(row["y1_value"], row["y1_observed"], "Y(1)")
+            + f"<td style='{_STYLE_OBSERVED}'>{row['outcome']}<br><small>observed</small></td>"
+            "</tr>"
+        )
+
+    return (
+        "<table style='border-collapse:collapse; width:100%; font-size:0.9rem;'>"
+        f"<thead><tr>{th_cells}</tr></thead>"
+        f"<tbody>{''.join(html_rows)}</tbody>"
+        "</table>"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Navigation
@@ -159,30 +247,13 @@ elif page == "Lesson 2 — Potential outcomes":
             ["episode_id", "severity", "treatment_label",
              "potential_outcome_0", "potential_outcome_1", "outcome"]
         ].copy()
-        sample.columns = [
-            "Episode", "Severity", "Assigned treatment",
-            "Y(0) — oracle", "Y(1) — oracle", "Observed outcome"
-        ]
-        # Highlight which potential outcome is observed
-        def _style_row(row):
-            styles = [""] * len(row)
-            if row["Assigned treatment"] == "EARLY_COORDINATED_RESPONSE":
-                styles[5] = "background-color: #d4edda"   # observed = Y(1)
-                styles[3] = "color: #aaa"                  # Y(0) is missing
-            else:
-                styles[5] = "background-color: #d4edda"
-                styles[4] = "color: #aaa"                  # Y(1) is missing
-            return styles
-        st.dataframe(
-            sample.style.apply(_style_row, axis=1).format(
-                {"Severity": "{:.2f}", "Y(0) — oracle": "{:.1f}",
-                 "Y(1) — oracle": "{:.1f}", "Observed outcome": "{:.1f}"}
-            ),
-            use_container_width=True,
+        st.markdown(
+            _render_po_table(sample),
+            unsafe_allow_html=True,
         )
         st.caption(
-            "Green = observed outcome. Grey = missing counterfactual "
-            "(not available in real data)."
+            "★ Observed outcome (pale blue highlight, bold). "
+            "[missing] = counterfactual — not available in real data."
         )
     else:
         st.warning(
@@ -297,9 +368,11 @@ else:
 
     # --- Outcome distributions ---
     st.subheader("Outcome distributions by treatment group")
+    plot_df_dist = df.copy()
+    plot_df_dist["treatment_label"] = plot_df_dist["treatment_label"].astype(str)
     fig_dist = px.histogram(
-        df, x="outcome", color="treatment_label",
-        barmode="overlay", opacity=0.65, nbins=40,
+        plot_df_dist, x="outcome", color="treatment_label",
+        barmode="overlay", nbins=40,
         labels={"outcome": "customer_impact_minutes_24h",
                 "treatment_label": "Treatment"},
         title="Outcome distribution: EARLY_COORDINATED_RESPONSE vs. MONITOR_REASSESS",
