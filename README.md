@@ -46,7 +46,7 @@ This repository is under active development. The implementation follows a gated 
 | 1 | Schemas, provenance, dependencies, tests | ✅ Complete — commit `0bbe918` |
 | 2 | Structural DGP, randomized contrast, oracle | ✅ Complete — commit `75cb440` |
 | 3 | First Streamlit page, Lessons 1–2, target-trial card | ✅ Complete — commit `acd6b4a` |
-| 4 | Confounding, DAG, Lessons 3–4 | 🔲 Pending |
+| 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `55ea04a` |
 | 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | 🔲 Pending |
 | 6 | Accessibility, documentation, release gate | 🔲 Pending |
 
@@ -119,7 +119,7 @@ streamlit run app.py
 pytest -v
 ```
 
-Current result: **95 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, and `test_lessons.py`.
+Current result: **98 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, and `test_lessons.py`.
 
 ## Data model (Slice 1)
 
