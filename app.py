@@ -145,6 +145,7 @@ def _render_dag() -> go.Figure:
             x=[x], y=[y], mode="markers+text",
             text=[name], textposition="top center",
             marker=dict(size=28, color=color, line=dict(color="white", width=2)),
+            textfont=dict(color="#000000", size=13),
             showlegend=False,
         ))
     # Legend entries
