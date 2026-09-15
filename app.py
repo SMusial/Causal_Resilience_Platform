@@ -525,6 +525,7 @@ else:
 
     # --- Interpretation ---
     st.subheader("Plain-language interpretation")
+    ci = result.confidence_interval or (result.estimate, result.estimate)
     direction = "reduced" if result.estimate < 0 else "increased"
     st.write(
         f"Under the randomized synthetic scenario, early coordinated response "
