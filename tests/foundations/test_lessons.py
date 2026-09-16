@@ -124,3 +124,51 @@ def test_render_contains_missing_label():
 def test_render_no_grey_text():
     html = render_po_table(_make_sample(treated=True))
     assert "#aaa" not in html
+
+
+# ---------------------------------------------------------------------------
+# Lesson 5 and 6 content — Slice 5
+# ---------------------------------------------------------------------------
+
+def test_lesson_5_fields():
+    from causal_resilience.foundations.lessons import LESSON_5
+    assert LESSON_5.lesson_id == "L5"
+    assert LESSON_5.title and LESSON_5.objective and LESSON_5.explanation
+    assert "estimator_comparison" in LESSON_5.visual_keys
+    assert "propensity_overlap" in LESSON_5.visual_keys
+    assert LESSON_5.source_reference
+
+
+def test_lesson_6_fields():
+    from causal_resilience.foundations.lessons import LESSON_6
+    assert LESSON_6.lesson_id == "L6"
+    assert LESSON_6.title and LESSON_6.objective and LESSON_6.explanation
+    assert "propensity_overlap" in LESSON_6.visual_keys
+    assert "effective_sample_size" in LESSON_6.visual_keys
+    assert LESSON_6.source_reference
+
+
+def test_lesson_5_mentions_ipw():
+    from causal_resilience.foundations.lessons import LESSON_5
+    assert "ipw" in LESSON_5.explanation.lower() or "inverse" in LESSON_5.explanation.lower()
+
+
+def test_lesson_5_mentions_standardization():
+    from causal_resilience.foundations.lessons import LESSON_5
+    assert "standardization" in LESSON_5.explanation.lower() or "g-formula" in LESSON_5.explanation.lower()
+
+
+def test_lesson_6_mentions_ess():
+    from causal_resilience.foundations.lessons import LESSON_6
+    assert "ess" in LESSON_6.explanation.lower() or "effective sample" in LESSON_6.explanation.lower()
+
+
+def test_lesson_6_mentions_positivity():
+    from causal_resilience.foundations.lessons import LESSON_6
+    assert "positivity" in LESSON_6.explanation.lower()
+
+
+def test_registry_includes_lessons_5_and_6():
+    from causal_resilience.foundations.lessons import LESSONS, LESSON_5, LESSON_6
+    assert "L5" in LESSONS and LESSONS["L5"] is LESSON_5
+    assert "L6" in LESSONS and LESSONS["L6"] is LESSON_6

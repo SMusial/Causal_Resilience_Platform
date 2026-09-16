@@ -233,6 +233,136 @@ LESSON_4 = LessonContent(
 
 
 # ---------------------------------------------------------------------------
+# Lesson 5 — Adjustment: stratification, standardization, and IPW
+# ---------------------------------------------------------------------------
+
+LESSON_5 = LessonContent(
+    lesson_id="L5",
+    title="Adjustment: standardization and IPW",
+    objective=(
+        "Apply outcome regression (standardization) and inverse-probability "
+        "weighting to recover the ATE under confounded assignment, and explain "
+        "what each method requires to be valid."
+    ),
+    explanation=(
+        "When exchangeability does not hold unconditionally, we must adjust "
+        "for the confounder. V0 teaches two transparent methods.\n\n"
+        "Standardization (g-formula):\n"
+        "  1. Fit an outcome model: E[Y | A, severity] using OLS.\n"
+        "  2. For every episode, predict Y_hat(1) and Y_hat(0).\n"
+        "  3. ATE = mean(Y_hat(1) - Y_hat(0)).\n"
+        "This averages predictions over the observed severity distribution, "
+        "removing the confounding by severity.\n\n"
+        "Inverse-probability weighting (IPW):\n"
+        "  1. Fit a propensity model: P(A=1 | severity) using logistic regression.\n"
+        "  2. Weight each episode by 1/P(A=a_i | severity_i).\n"
+        "  3. ATE = weighted_mean(Y | A=1) - weighted_mean(Y | A=0).\n"
+        "IPW creates a pseudo-population where severity is balanced across "
+        "treatment groups, removing the backdoor path.\n\n"
+        "Both methods require:\n"
+        "  - Conditional exchangeability: Y(a) ⊥ A | severity.\n"
+        "  - Positivity: 0 < P(A=1 | severity=l) < 1 for all l.\n"
+        "  - Correct model specification (each method for its own model).\n\n"
+        "Source: Hernán & Robins, What If, Chapter 2 (§2.3–2.4)."
+    ),
+    visual_keys=[
+        "estimator_comparison",
+        "propensity_overlap",
+        "weight_distribution",
+        "severity_balance_after",
+    ],
+    estimate_or_diagnostic=(
+        "Switch to confounded assignment. Compare the crude DiM, "
+        "standardization, and IPW estimates side by side. "
+        "In teaching mode, compare all three with the oracle ATE. "
+        "Observe that the adjusted estimates are closer to the oracle "
+        "than the crude DiM."
+    ),
+    interpretation=(
+        "Under correctly specified models and adequate overlap, both "
+        "standardization and IPW recover the oracle ATE within sampling "
+        "variability. The crude DiM remains biased. The two adjusted "
+        "estimators can differ when models are misspecified or overlap is "
+        "limited — neither is automatically correct in real data."
+    ),
+    reflection=(
+        "If the outcome model is misspecified (e.g., the true relationship "
+        "is non-linear), will standardization still recover the ATE? "
+        "What happens to IPW estimates when some propensity scores are "
+        "very close to 0 or 1?"
+    ),
+    source_reference="Hernán & Robins, What If, Chapter 2 (§2.3–2.4)",
+)
+
+
+# ---------------------------------------------------------------------------
+# Lesson 6 — Diagnostics, uncertainty, and responsible interpretation
+# ---------------------------------------------------------------------------
+
+LESSON_6 = LessonContent(
+    lesson_id="L6",
+    title="Diagnostics, uncertainty, and responsible interpretation",
+    objective=(
+        "Interpret propensity overlap, IPW weight distributions, effective "
+        "sample size, and assumption warnings to decide whether a causal "
+        "estimate is supported, fragile, or not interpretable."
+    ),
+    explanation=(
+        "A numerically precise estimate is not automatically a causal estimate. "
+        "Three diagnostic checks are required before interpreting any adjusted "
+        "result:\n\n"
+        "1. Overlap (positivity check):\n"
+        "   Propensity scores for treated and control episodes must span a "
+        "common range. If one group has propensities near 0 or 1, the "
+        "positivity assumption is violated and IPW weights become extreme.\n\n"
+        "2. Weight distribution:\n"
+        "   Extreme IPW weights (e.g., > 10) inflate variance and signal "
+        "positivity problems. The effective sample size (ESS) measures how "
+        "much information the weighted sample retains:\n"
+        "   ESS = (sum w)^2 / sum(w^2)\n"
+        "   A low ESS relative to the nominal sample size means the estimate "
+        "is driven by a small number of episodes.\n\n"
+        "3. Covariate balance:\n"
+        "   The standardized mean difference (SMD) for severity should be "
+        "small after weighting (SMD < 0.1 is a common threshold). "
+        "Large post-weighting SMD indicates the propensity model did not "
+        "adequately balance the groups.\n\n"
+        "Uncertainty from the bootstrap CI reflects sampling variability only. "
+        "It does not capture unmeasured-confounding uncertainty. A narrow CI "
+        "under strong unmeasured confounding is false precision.\n\n"
+        "Source: Hernán & Robins, What If, Chapter 3 (§3.1) and Chapter 2 (§2.4)."
+    ),
+    visual_keys=[
+        "propensity_overlap",
+        "weight_distribution",
+        "effective_sample_size",
+        "estimator_comparison",
+        "assumption_checklist",
+    ],
+    estimate_or_diagnostic=(
+        "Switch to limited-overlap assignment. Observe that propensity scores "
+        "cluster near 0 and 1, IPW weights become extreme, and the ESS drops. "
+        "Compare the overlap warning with the adequate-overlap scenario. "
+        "Check whether the SMD after weighting is below 0.1."
+    ),
+    interpretation=(
+        "When overlap is adequate and models are correctly specified, the "
+        "adjusted estimates are supported. When overlap is limited, extreme "
+        "weights signal that the positivity assumption is violated and the "
+        "IPW estimate should not be interpreted causally without further "
+        "investigation. The assumption checklist makes these conditions "
+        "explicit rather than hiding them."
+    ),
+    reflection=(
+        "Can a statistically significant result from an IPW estimator be "
+        "interpreted causally when the ESS is 5% of the nominal sample size? "
+        "What would you do if the SMD after weighting is still 0.3?"
+    ),
+    source_reference="Hernán & Robins, What If, Chapter 2 (§2.4) and Chapter 3 (§3.1)",
+)
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -241,4 +371,6 @@ LESSONS: dict[str, LessonContent] = {
     LESSON_2.lesson_id: LESSON_2,
     LESSON_3.lesson_id: LESSON_3,
     LESSON_4.lesson_id: LESSON_4,
+    LESSON_5.lesson_id: LESSON_5,
+    LESSON_6.lesson_id: LESSON_6,
 }

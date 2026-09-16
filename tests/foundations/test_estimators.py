@@ -225,3 +225,142 @@ class TestBootstrapReproducibility:
                 covered += 1
         coverage = covered / n_trials
         assert coverage >= 0.85
+
+
+# ---------------------------------------------------------------------------
+# Standardization — Slice 5
+# ---------------------------------------------------------------------------
+
+class TestStandardization:
+    def test_recovers_oracle_under_confounding_large_sample(self, dgp, estimand, est_config):
+        """
+        Standardization with a correctly specified linear model should recover
+        the oracle ATE within 5 minutes at n=3000 under confounded assignment.
+        """
+        from causal_resilience.foundations.estimators import Standardization
+        cfg = make_config(
+            n_episodes=3000, seed=0,
+            assignment_mode=AssignmentMode.CONFOUNDED,
+            confounding_strength=3.0,
+            treatment_effect=-40.0, outcome_noise_sd=20.0,
+            teaching_mode=True,
+        )
+        ds = dgp.generate(cfg)
+        gt = dgp.truth(ds)
+        result = Standardization().estimate(ds, estimand, est_config, ground_truth=gt)
+        assert abs(result.estimate - gt.finite_sample_ate) < 5.0
+
+    def test_standardization_closer_to_oracle_than_crude_under_confounding(
+        self, dgp, estimand, est_config
+    ):
+        """Standardization should reduce bias relative to crude DiM."""
+        from causal_resilience.foundations.estimators import DifferenceInMeans, Standardization
+        errors_crude, errors_std = [], []
+        for seed in range(10):
+            cfg = make_config(
+                n_episodes=1000, seed=seed,
+                assignment_mode=AssignmentMode.CONFOUNDED,
+                confounding_strength=3.0,
+                treatment_effect=-40.0, teaching_mode=True,
+            )
+            ds = dgp.generate(cfg)
+            gt = dgp.truth(ds)
+            r_crude = DifferenceInMeans().estimate(ds, estimand, est_config)
+            r_std = Standardization().estimate(ds, estimand, est_config)
+            errors_crude.append(abs(r_crude.estimate - gt.finite_sample_ate))
+            errors_std.append(abs(r_std.estimate - gt.finite_sample_ate))
+        assert np.mean(errors_std) < np.mean(errors_crude)
+
+    def test_standardization_result_structure(self, dgp, estimand, est_config):
+        from causal_resilience.foundations.estimators import Standardization
+        ds = dgp.generate(make_config(n_episodes=200))
+        result = Standardization().estimate(ds, estimand, est_config)
+        assert result.estimator_name == "standardization"
+        assert isinstance(result.estimate, float)
+        assert result.confidence_interval is not None
+        lo, hi = result.confidence_interval
+        assert lo < hi
+
+    def test_standardization_warns_about_model_specification(self, dgp, estimand, est_config):
+        from causal_resilience.foundations.estimators import Standardization
+        ds = dgp.generate(make_config(n_episodes=200))
+        result = Standardization().estimate(ds, estimand, est_config)
+        assert any("model" in w.lower() for w in result.warnings)
+
+
+# ---------------------------------------------------------------------------
+# IPW — Slice 5
+# ---------------------------------------------------------------------------
+
+class TestIPW:
+    def test_recovers_oracle_under_confounding_large_sample(self, dgp, estimand, est_config):
+        """
+        IPW with a correctly specified logistic propensity model should recover
+        the oracle ATE within 5 minutes at n=3000 under confounded assignment.
+        """
+        from causal_resilience.foundations.estimators import IPW
+        cfg = make_config(
+            n_episodes=3000, seed=0,
+            assignment_mode=AssignmentMode.CONFOUNDED,
+            confounding_strength=3.0,
+            treatment_effect=-40.0, outcome_noise_sd=20.0,
+            teaching_mode=True,
+        )
+        ds = dgp.generate(cfg)
+        gt = dgp.truth(ds)
+        result = IPW().estimate(ds, estimand, est_config, ground_truth=gt)
+        assert abs(result.estimate - gt.finite_sample_ate) < 5.0
+
+    def test_ipw_closer_to_oracle_than_crude_under_confounding(
+        self, dgp, estimand, est_config
+    ):
+        """IPW should reduce bias relative to crude DiM."""
+        from causal_resilience.foundations.estimators import DifferenceInMeans, IPW
+        errors_crude, errors_ipw = [], []
+        for seed in range(10):
+            cfg = make_config(
+                n_episodes=1000, seed=seed,
+                assignment_mode=AssignmentMode.CONFOUNDED,
+                confounding_strength=3.0,
+                treatment_effect=-40.0, teaching_mode=True,
+            )
+            ds = dgp.generate(cfg)
+            gt = dgp.truth(ds)
+            r_crude = DifferenceInMeans().estimate(ds, estimand, est_config)
+            r_ipw = IPW().estimate(ds, estimand, est_config)
+            errors_crude.append(abs(r_crude.estimate - gt.finite_sample_ate))
+            errors_ipw.append(abs(r_ipw.estimate - gt.finite_sample_ate))
+        assert np.mean(errors_ipw) < np.mean(errors_crude)
+
+    def test_ipw_result_structure(self, dgp, estimand, est_config):
+        from causal_resilience.foundations.estimators import IPW
+        ds = dgp.generate(make_config(n_episodes=200))
+        result = IPW().estimate(ds, estimand, est_config)
+        assert result.estimator_name == "ipw"
+        assert isinstance(result.estimate, float)
+        assert result.confidence_interval is not None
+        lo, hi = result.confidence_interval
+        assert lo < hi
+
+    def test_ipw_extreme_weight_warning_fires(self, dgp, estimand, est_config):
+        """IPW should attach EXTREME_WEIGHTS diagnostic when weights exceed threshold."""
+        from causal_resilience.foundations.estimators import IPW
+        # Use a very low threshold so any weight above 1.5 triggers the warning
+        cfg = make_config(
+            n_episodes=500, seed=0,
+            assignment_mode=AssignmentMode.CONFOUNDED,
+            confounding_strength=4.0,
+        )
+        ds = dgp.generate(cfg)
+        result = IPW().estimate(ds, estimand, est_config, extreme_weight_threshold=1.5)
+        overlap_codes = [d.code for d in result.diagnostics]
+        assert "EXTREME_WEIGHTS" in overlap_codes
+
+    def test_ipw_get_propensity_and_weights_shape(self, dgp, estimand, est_config):
+        from causal_resilience.foundations.estimators import IPW
+        ds = dgp.generate(make_config(n_episodes=300))
+        ps, w = IPW().get_propensity_and_weights(ds)
+        assert len(ps) == 300
+        assert len(w) == 300
+        assert np.all(ps > 0) and np.all(ps < 1)
+        assert np.all(w > 0)

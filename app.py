@@ -19,8 +19,9 @@ from causal_resilience.foundations.schemas import (
     ScenarioConfig,
 )
 from causal_resilience.foundations.dgp import TelecomFoundationsDGP
-from causal_resilience.foundations.estimators import DifferenceInMeans, EstimatorConfig
-from causal_resilience.foundations.lessons import LESSON_1, LESSON_2, LESSON_3, LESSON_4
+from causal_resilience.foundations.estimators import DifferenceInMeans, EstimatorConfig, Standardization, IPW
+from causal_resilience.foundations.lessons import LESSON_1, LESSON_2, LESSON_3, LESSON_4, LESSON_5, LESSON_6
+from causal_resilience.foundations.diagnostics import compute_overlap, compute_weight_diagnostic, compute_balance
 from causal_resilience.foundations.tables import build_po_table_rows, render_po_table
 
 # ---------------------------------------------------------------------------
@@ -179,6 +180,8 @@ page = st.sidebar.radio(
         "Lesson 2 — Potential outcomes",
         "Lesson 3 — Randomization",
         "Lesson 4 — Confounding and the DAG",
+        "Lesson 5 — Adjustment",
+        "Lesson 6 — Diagnostics",
         "Sandbox",
     ],
     index=0,
@@ -438,6 +441,230 @@ elif page == "Lesson 4 — Confounding and the DAG":
 
     st.subheader("Reflection")
     st.info(LESSON_4.reflection)
+
+
+# ===========================================================================
+# LESSON 5
+# ===========================================================================
+
+elif page == "Lesson 5 — Adjustment":
+    st.title(f"Lesson 5: {LESSON_5.title}")
+    st.caption(f"Source: {LESSON_5.source_reference}")
+    if assignment_mode != AssignmentMode.CONFOUNDED:
+        st.warning("Set **Assignment mode** to Confounded in the sidebar for this lesson.")
+
+    st.subheader("Learning objective")
+    st.write(LESSON_5.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_5.explanation)
+
+    # --- Run all three estimators ---
+    est_cfg_l5 = EstimatorConfig(bootstrap_iterations=500, bootstrap_seed=0)
+    r_crude = DifferenceInMeans().estimate(dataset, _ESTIMAND, est_cfg_l5, ground_truth=ground_truth)
+    r_std   = Standardization().estimate(dataset, _ESTIMAND, est_cfg_l5, ground_truth=ground_truth)
+    r_ipw   = IPW().estimate(dataset, _ESTIMAND, est_cfg_l5, ground_truth=ground_truth)
+
+    # --- Estimator comparison chart ---
+    st.subheader("Estimator comparison")
+    estimators = ["Crude DiM", "Standardization", "IPW"]
+    estimates  = [r_crude.estimate, r_std.estimate, r_ipw.estimate]
+    colors     = ["#d62728", "#2ca02c", "#1f77b4"]
+    cis        = [
+        r_crude.confidence_interval or (r_crude.estimate, r_crude.estimate),
+        r_std.confidence_interval   or (r_std.estimate,   r_std.estimate),
+        r_ipw.confidence_interval   or (r_ipw.estimate,   r_ipw.estimate),
+    ]
+    fig_cmp = go.Figure()
+    for name, est, ci, color in zip(estimators, estimates, cis, colors):
+        fig_cmp.add_trace(go.Scatter(
+            x=[est], y=[name], mode="markers",
+            name=name,
+            marker=dict(symbol="diamond", size=14, color=color),
+            error_x=dict(
+                type="data", symmetric=False,
+                array=[ci[1] - est], arrayminus=[est - ci[0]],
+                color=color,
+            ),
+        ))
+    if teaching_mode and ground_truth is not None:
+        fig_cmp.add_vline(
+            x=ground_truth.finite_sample_ate,
+            line_dash="dot", line_color="#ff7f0e",
+            annotation_text="Oracle ATE", annotation_position="top right",
+        )
+    fig_cmp.add_vline(x=0, line_dash="dash", line_color="#888",
+                      annotation_text="No effect", annotation_position="bottom right")
+    fig_cmp.update_layout(
+        title="ATE estimates with 95% bootstrap CI",
+        xaxis_title="customer_impact_minutes_24h (mean difference)",
+        yaxis=dict(autorange="reversed"),
+        height=280, margin=dict(t=50, b=40),
+        legend=dict(orientation="h", y=-0.3),
+    )
+    st.plotly_chart(fig_cmp, use_container_width=True)
+    st.caption(
+        "Crude DiM (red) is biased under confounding. "
+        "Standardization (green) and IPW (blue) adjust for severity."
+    )
+
+    # --- Propensity overlap ---
+    st.subheader("Propensity overlap")
+    ps, w = IPW().get_propensity_and_weights(dataset)
+    trt_arr = df["treatment"].to_numpy()
+    fig_ps = go.Figure()
+    for label, mask, color, dash in [
+        ("EARLY_COORDINATED_RESPONSE", trt_arr == 1, "#2ca02c", "solid"),
+        ("MONITOR_REASSESS",           trt_arr == 0, "#d62728", "dash"),
+    ]:
+        fig_ps.add_trace(go.Histogram(
+            x=ps[mask], name=label, opacity=0.7, nbinsx=30,
+            marker_color=color,
+        ))
+    fig_ps.update_layout(
+        barmode="overlay",
+        title="Estimated propensity score by treatment group",
+        xaxis_title="P(A=1 | severity)", yaxis_title="Count",
+        legend=dict(orientation="h", y=-0.25), height=300,
+    )
+    st.plotly_chart(fig_ps, use_container_width=True)
+
+    # --- Weight distribution ---
+    st.subheader("IPW weight distribution")
+    wd = compute_weight_diagnostic(w)
+    fig_w = go.Figure(go.Histogram(x=w, nbinsx=40, marker_color="#1f77b4", opacity=0.8))
+    fig_w.add_vline(x=10, line_dash="dash", line_color="#d62728",
+                    annotation_text="Extreme threshold (10)", annotation_position="top right")
+    fig_w.update_layout(
+        title=f"IPW weight distribution  |  ESS = {wd.effective_sample_size:.0f} / {len(w)}",
+        xaxis_title="Weight", yaxis_title="Count", height=280,
+    )
+    st.plotly_chart(fig_w, use_container_width=True)
+    if wd.warning_message:
+        st.warning(f"\u26a0\ufe0f {wd.warning_message}")
+    else:
+        st.success(f"No extreme weights. ESS = {wd.effective_sample_size:.0f} of {len(w)} episodes.")
+
+    st.subheader("Reflection")
+    st.info(LESSON_5.reflection)
+
+
+# ===========================================================================
+# LESSON 6
+# ===========================================================================
+
+elif page == "Lesson 6 — Diagnostics":
+    st.title(f"Lesson 6: {LESSON_6.title}")
+    st.caption(f"Source: {LESSON_6.source_reference}")
+
+    st.subheader("Learning objective")
+    st.write(LESSON_6.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_6.explanation)
+
+    est_cfg_l6 = EstimatorConfig(bootstrap_iterations=500, bootstrap_seed=0)
+    r_crude = DifferenceInMeans().estimate(dataset, _ESTIMAND, est_cfg_l6, ground_truth=ground_truth)
+    r_std   = Standardization().estimate(dataset, _ESTIMAND, est_cfg_l6, ground_truth=ground_truth)
+    r_ipw   = IPW().estimate(dataset, _ESTIMAND, est_cfg_l6, ground_truth=ground_truth)
+    ps, w   = IPW().get_propensity_and_weights(dataset)
+    trt_arr = df["treatment"].to_numpy()
+    sev_arr = df["severity"].to_numpy()
+
+    # --- Overlap ---
+    st.subheader("Diagnostic 1 — Propensity overlap")
+    overlap = compute_overlap(ps, trt_arr)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Treated ps range",
+                f"{overlap.min_propensity_treated:.2f} – {overlap.max_propensity_treated:.2f}")
+    col2.metric("Control ps range",
+                f"{overlap.min_propensity_control:.2f} – {overlap.max_propensity_control:.2f}")
+    col3.metric("Overlap adequate", "Yes" if overlap.overlap_adequate else "No")
+    if overlap.warning_message:
+        st.warning(f"\u26a0\ufe0f {overlap.warning_message}")
+    else:
+        st.success("Propensity ranges overlap. Positivity assumption is supported.")
+
+    # --- Weight distribution and ESS ---
+    st.subheader("Diagnostic 2 — Weight distribution and ESS")
+    wd = compute_weight_diagnostic(w)
+    col4, col5, col6 = st.columns(3)
+    col4.metric("Max weight", f"{wd.max_weight:.1f}")
+    col5.metric("% extreme (>10)", f"{wd.pct_extreme * 100:.1f}%")
+    col6.metric("ESS", f"{wd.effective_sample_size:.0f} / {len(w)}")
+    if wd.warning_message:
+        st.warning(f"\u26a0\ufe0f {wd.warning_message}")
+    else:
+        st.success("No extreme weights detected.")
+
+    # --- Balance ---
+    st.subheader("Diagnostic 3 — Covariate balance (SMD)")
+    balance = compute_balance(sev_arr, trt_arr, weights=w)
+    col7, col8 = st.columns(2)
+    col7.metric("SMD unweighted", f"{balance.smd_unweighted:.3f}",
+                delta="adequate" if balance.balance_adequate_unweighted else "imbalanced",
+                delta_color="normal" if balance.balance_adequate_unweighted else "inverse")
+    if balance.smd_weighted is not None:
+        col8.metric("SMD after IPW", f"{balance.smd_weighted:.3f}",
+                    delta="adequate" if balance.balance_adequate_weighted else "imbalanced",
+                    delta_color="normal" if balance.balance_adequate_weighted else "inverse")
+    st.caption("SMD < 0.1 indicates adequate balance. SMD is computed for severity.")
+
+    # --- Estimator comparison ---
+    st.subheader("Estimator comparison with uncertainty")
+    estimators = ["Crude DiM", "Standardization", "IPW"]
+    estimates  = [r_crude.estimate, r_std.estimate, r_ipw.estimate]
+    colors     = ["#d62728", "#2ca02c", "#1f77b4"]
+    cis = [
+        r_crude.confidence_interval or (r_crude.estimate, r_crude.estimate),
+        r_std.confidence_interval   or (r_std.estimate,   r_std.estimate),
+        r_ipw.confidence_interval   or (r_ipw.estimate,   r_ipw.estimate),
+    ]
+    fig_cmp6 = go.Figure()
+    for name, est, ci, color in zip(estimators, estimates, cis, colors):
+        fig_cmp6.add_trace(go.Scatter(
+            x=[est], y=[name], mode="markers", name=name,
+            marker=dict(symbol="diamond", size=14, color=color),
+            error_x=dict(
+                type="data", symmetric=False,
+                array=[ci[1] - est], arrayminus=[est - ci[0]], color=color,
+            ),
+        ))
+    if teaching_mode and ground_truth is not None:
+        fig_cmp6.add_vline(
+            x=ground_truth.finite_sample_ate, line_dash="dot", line_color="#ff7f0e",
+            annotation_text="Oracle ATE", annotation_position="top right",
+        )
+    fig_cmp6.add_vline(x=0, line_dash="dash", line_color="#888",
+                       annotation_text="No effect", annotation_position="bottom right")
+    fig_cmp6.update_layout(
+        title="ATE estimates with 95% bootstrap CI",
+        xaxis_title="customer_impact_minutes_24h (mean difference)",
+        yaxis=dict(autorange="reversed"),
+        height=280, margin=dict(t=50, b=40),
+        legend=dict(orientation="h", y=-0.3),
+    )
+    st.plotly_chart(fig_cmp6, use_container_width=True)
+
+    # --- Assumption checklist ---
+    st.subheader("Assumption checklist")
+    checks = [
+        ("Consistency", True,
+         "Observed outcome equals potential outcome under assigned treatment (enforced by DGP)."),
+        ("Exchangeability", assignment_mode == AssignmentMode.CONFOUNDED,
+         "Conditional on severity. Supported by DGP design in teaching mode; "
+         "cannot be verified from observed data alone."),
+        ("Positivity", overlap.overlap_adequate,
+         f"Propensity ranges overlap: {overlap.overlap_adequate}."),
+        ("No interference", True,
+         "Episodes are independent in V0 (simplification)."),
+        ("Complete follow-up", True,
+         "24-hour outcome is observed for all episodes in V0."),
+    ]
+    for name, satisfied, note in checks:
+        icon = "\u2705" if satisfied else "\u26a0\ufe0f"
+        st.write(f"{icon} **{name}** — {note}")
+
+    st.subheader("Reflection")
+    st.info(LESSON_6.reflection)
 
 
 # ===========================================================================
