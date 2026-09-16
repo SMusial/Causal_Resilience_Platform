@@ -123,7 +123,9 @@ def _show_estimate_chart(result, ground_truth, teaching_mode: bool) -> None:
 
 def _render_dag() -> go.Figure:
     """V0 baseline DAG: severity → treatment, severity → outcome, treatment → outcome."""
-    nodes = {"severity": (0.0, 1.0), "treatment": (1.0, 1.0), "outcome": (2.0, 1.0)}
+    # severity is raised above the treatment–outcome axis so the confounder
+    # arrows arc over the causal path and do not pass through treatment.
+    nodes = {"severity": (1.0, 1.8), "treatment": (0.0, 1.0), "outcome": (2.0, 1.0)}
     edges = [
         ("severity", "treatment", "#e67e22", "Confounder"),
         ("severity", "outcome",   "#e67e22", "Confounder"),
@@ -158,7 +160,7 @@ def _render_dag() -> go.Figure:
     fig.update_layout(
         title="V0 baseline DAG: severity is a common cause of treatment and outcome",
         xaxis=dict(visible=False, range=[-0.5, 2.5]),
-        yaxis=dict(visible=False, range=[0.5, 1.5]),
+        yaxis=dict(visible=False, range=[0.6, 2.1]),
         height=280, margin=dict(t=50, b=20),
         legend=dict(orientation="h", y=-0.05),
         plot_bgcolor="white",

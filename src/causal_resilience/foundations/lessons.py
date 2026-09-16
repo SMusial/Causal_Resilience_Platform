@@ -216,10 +216,12 @@ LESSON_4 = LessonContent(
     ),
     interpretation=(
         "Under confounded assignment, higher-severity incidents cluster in the "
-        "treated group. The crude estimate is pulled toward a larger (more "
-        "negative) value than the true ATE because treated episodes would have "
-        "had worse outcomes even without treatment. Adjustment for severity "
-        "is required — introduced in Lesson 5."
+        "treated group. The crude estimate is pulled toward a less negative "
+        "(more positive) value than the true ATE — or even a positive value — "
+        "because treated episodes would have had worse outcomes even without "
+        "treatment. The raw comparison makes the intervention look less "
+        "beneficial than it truly is. Adjustment for severity is required — "
+        "introduced in Lesson 5."
     ),
     reflection=(
         "If you did not know the DGP, how would you decide whether severity "
