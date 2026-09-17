@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Plotly](https://img.shields.io/badge/Charts-Plotly-3F4F75?logo=plotly&logoColor=white)](https://plotly.com/python/)
-[![Tests](https://img.shields.io/badge/Tests-pytest-0A9EDC)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-130%20passed-0A9EDC)](https://pytest.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
 An educational causal-inference laboratory and decision-intelligence demonstration built around a synthetic telecom incident-response world.
@@ -46,15 +46,15 @@ This repository is under active development. The implementation follows a gated 
 | 1 | Schemas, provenance, dependencies, tests | ✅ Complete — commit `0bbe918` |
 | 2 | Structural DGP, randomized contrast, oracle | ✅ Complete — commit `75cb440` |
 | 3 | First Streamlit page, Lessons 1–2, target-trial card | ✅ Complete — commit `acd6b4a` |
-| 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `55ea04a` |
-| 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | 🔲 Pending |
+| 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `f9cc08b` |
+| 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | ✅ Complete — commit `7735014` |
 | 6 | Accessibility, documentation, release gate | 🔲 Pending |
 
 ## Repository structure
 
 ```text
-causal-resilience-intervention-allocator/
-├── app.py                          # Streamlit application (Slice 3+)
+Causal_Resilience_Platform/
+├── app.py                          # Streamlit application — 6 lessons + sandbox
 ├── pyproject.toml                  # Package config and pinned dependencies
 ├── requirements.txt                # Direct pip install
 ├── src/
@@ -62,10 +62,10 @@ causal-resilience-intervention-allocator/
 │       └── foundations/
 │           ├── schemas.py          # V0 data contracts (Slice 1)
 │           ├── dgp.py              # Structural data-generating process (Slice 2+)
-│           ├── estimators.py       # Causal estimators (Slice 2+)
-│           ├── diagnostics.py      # Overlap, balance, weight diagnostics (Slice 5+)
-│           ├── provenance.py       # Reproducibility utilities (Slice 2+)
-│           └── lessons.py          # Course lesson content (Slice 3+)
+│           ├── estimators.py       # DiM, Standardization, IPW (Slice 2/5)
+│           ├── diagnostics.py      # Overlap, balance, weight diagnostics (Slice 5)
+│           ├── lessons.py          # Course lesson content, Lessons 1–6 (Slice 3/5)
+│           └── tables.py           # Potential-outcome table rendering (Slice 3)
 ├── course/
 │   └── v0/
 │       ├── 01_causal_question.md
@@ -76,11 +76,11 @@ causal-resilience-intervention-allocator/
 │       └── 06_diagnostics.md
 ├── tests/
 │   └── foundations/
-│       ├── test_schemas.py         # 39 schema tests (Slice 1)
-│       ├── test_dgp.py             # DGP and ground-truth tests (Slice 2+)
-│       ├── test_estimators.py      # Estimator correctness tests (Slice 2+)
-│       ├── test_diagnostics.py     # Diagnostic behavior tests (Slice 5+)
-│       └── test_reproducibility.py # Seed and config reproducibility (Slice 2+)
+│       ├── test_schemas.py         # Schema validation tests (Slice 1)
+│       ├── test_dgp.py             # DGP and ground-truth tests (Slice 2)
+│       ├── test_estimators.py      # DiM, Standardization, IPW tests (Slice 2/5)
+│       ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
+│       └── test_lessons.py         # Lesson content and table tests (Slice 3/5)
 ├── docs/
 │   └── sources/
 │       └── whatif.pdf              # Hernán & Robins, Causal Inference: What If
@@ -111,15 +111,13 @@ pip install -e ".[dev]"
 streamlit run app.py
 ```
 
-> Run `streamlit run app.py` to start the application.
-
 ## Run the tests
 
 ```bash
 pytest -v
 ```
 
-Current result: **98 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, and `test_lessons.py`.
+Current result: **130 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, `test_diagnostics.py`, and `test_lessons.py`.
 
 ## Data model (Slice 1)
 
@@ -172,14 +170,67 @@ Default `treatment_effect = −40.0` minutes. Three assignment modes are support
 
 Oracle fields are populated only when `teaching_mode=True`. `truth()` returns a `GroundTruth` object with the finite-sample ATE computed directly from potential outcomes.
 
-### Difference-in-means estimator
+## Estimators (Slices 2 and 5)
 
-`DifferenceInMeans` computes the naive treated-minus-control mean difference with a bootstrap 95% confidence interval. It accepts an optional `GroundTruth` for oracle comparison and returns a fully populated `EstimateResult`.
+All estimators share the `CausalEstimator` protocol, return a fully populated `EstimateResult`, and use a nonparametric bootstrap for uncertainty. The bootstrap interval reflects sampling variability only — it does not quantify unmeasured-confounding uncertainty.
 
-Under randomization at n=1000, the estimator recovers the oracle ATE to within ~1 minute (oracle −39.2, estimate −40.0 in the reference run).
+### Difference in means
+
+```text
+ATE_hat = mean(Y | A=1) − mean(Y | A=0)
+```
+
+Valid under randomization. Biased under confounded assignment without adjustment.
+
+### Standardization (g-formula)
+
+```text
+1. Fit E[Y | A, severity] with OLS.
+2. Predict Y_hat(1) and Y_hat(0) for every episode.
+3. ATE_hat = mean(Y_hat(1) − Y_hat(0))
+```
+
+Requires correct outcome-model specification. Under the correctly specified linear DGP, recovers the oracle ATE within 5 minutes at n=3000.
+
+### Inverse-probability weighting
+
+```text
+1. Fit P(A=1 | severity) with logistic regression.
+2. Weight each episode by 1 / P(A=a_i | severity_i).
+3. ATE_hat = weighted_mean(Y | A=1) − weighted_mean(Y | A=0)
+```
+
+Requires correct propensity-model specification and positivity. Under the correctly specified DGP, recovers the oracle ATE within 5 minutes at n=3000.
+
+## Diagnostics (Slice 5)
+
+`diagnostics.py` provides three checks that must be examined before interpreting any adjusted estimate.
+
+### Overlap
+
+`compute_overlap` assesses whether propensity scores for treated and control episodes span a common range. Episodes with propensity within 0.05 of 0 or 1 are flagged as near-boundary. Non-overlapping ranges trigger a positivity warning.
+
+### Weight distribution and effective sample size
+
+`compute_weight_diagnostic` summarises the IPW weight distribution and computes the Kish effective sample size:
+
+```text
+ESS = (sum w)² / sum(w²)
+```
+
+Weights above the configurable threshold (default 10) are flagged as extreme. A low ESS relative to the nominal sample size indicates the estimate is driven by a small number of episodes.
+
+### Covariate balance
+
+`compute_balance` computes the standardized mean difference (SMD) for severity before and after IPW weighting:
+
+```text
+SMD = |mean_treated − mean_control| / pooled_sd
+```
+
+SMD < 0.1 is the conventional threshold for adequate balance. Under correctly specified IPW, the weighted SMD should be substantially smaller than the unweighted SMD.
 
 ## Identification assumptions
-
 
 Every causal result in this project is conditional on the following assumptions being stated and examined:
 
@@ -201,7 +252,7 @@ V0 is a six-lesson guided sequence. Each lesson has a learning objective, a shor
 | 2 | Potential outcomes and the missing counterfactual |
 | 3 | Randomization: when association can identify causation |
 | 4 | Confounding and the DAG |
-| 5 | Adjustment: stratification, standardization, and IPW |
+| 5 | Adjustment: standardization and IPW |
 | 6 | Diagnostics, uncertainty, and responsible interpretation |
 
 ## Methodological foundation
