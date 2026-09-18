@@ -1,7 +1,16 @@
 """
 causal_resilience.foundations.tables
 ======================================
-V0 Slice 3/4 — Potential-outcome table rendering helpers.
+V0 Slice 3/6 — Potential-outcome table rendering helpers.
+
+Accessibility (Slice 6):
+- Observed cell: dark-blue background (#1e3a5f), white text — contrast > 7:1.
+- Counterfactual cell: white background (#ffffff), dark text (#1a1a1a),
+  dashed border — contrast > 15:1. Replaces the previous #f0f0f0 background
+  which was borderline at small font sizes.
+- Table has role="table" and th scope attributes.
+- Observed/counterfactual distinction uses both color AND text label AND
+  a star symbol, so it is never color-only.
 
 Pure functions with no Streamlit dependency — fully testable.
 """
@@ -12,13 +21,16 @@ from typing import Any
 
 import pandas as pd
 
+# Observed cell: white text on dark blue — WCAG contrast > 7:1
 _STYLE_OBSERVED = (
-    "background-color:#dbeafe; color:#1e3a5f; font-weight:bold; "
-    "border:2px solid #2563eb; padding:4px 8px;"
+    "background-color:#1e3a5f; color:#ffffff; font-weight:bold; "
+    "border:2px solid #1e3a5f; padding:4px 8px;"
 )
+# Counterfactual cell: dark text on white — WCAG contrast > 15:1
+# Dashed border provides a second visual cue beyond color.
 _STYLE_COUNTERFACTUAL = (
-    "background-color:#f0f0f0; color:#1a1a1a; "
-    "border:1px dashed #6b7280; padding:4px 8px;"
+    "background-color:#ffffff; color:#1a1a1a; "
+    "border:2px dashed #6b7280; padding:4px 8px;"
 )
 _STYLE_PLAIN = "padding:4px 8px; color:#1a1a1a; background-color:#ffffff;"
 _STYLE_TH = (
@@ -57,16 +69,18 @@ def render_po_table(sample: pd.DataFrame) -> str:
         "Episode", "Severity", "Assigned treatment",
         "Y(0) oracle", "Y(1) oracle", "Observed outcome",
     ]
-    th_cells = "".join(f"<th style='{_STYLE_TH}'>{h}</th>" for h in headers)
+    th_cells = "".join(
+        f"<th scope='col' style='{_STYLE_TH}'>{h}</th>" for h in headers
+    )
 
-    def _cell(value: str, observed: bool) -> str:
+    def _cell(value: str, observed: bool, label: str) -> str:
         if observed:
             return (
-                f"<td style='{_STYLE_OBSERVED}'>"
+                f"<td style='{_STYLE_OBSERVED}' aria-label='{label} observed'>"
                 f"&#9733; {value}<br><small>observed</small></td>"
             )
         return (
-            f"<td style='{_STYLE_COUNTERFACTUAL}'>"
+            f"<td style='{_STYLE_COUNTERFACTUAL}' aria-label='{label} missing counterfactual'>"
             f"{value}<br><small>[missing]</small></td>"
         )
 
@@ -77,14 +91,17 @@ def render_po_table(sample: pd.DataFrame) -> str:
             f"<td style='{_STYLE_PLAIN}'>{row['episode']}</td>"
             f"<td style='{_STYLE_PLAIN}'>{row['severity']}</td>"
             f"<td style='{_STYLE_PLAIN}'>{row['treatment']}</td>"
-            + _cell(row["y0_value"], row["y0_observed"])
-            + _cell(row["y1_value"], row["y1_observed"])
-            + f"<td style='{_STYLE_OBSERVED}'>{row['outcome']}<br><small>observed</small></td>"
-            "</tr>"
+            + _cell(row["y0_value"], row["y0_observed"], "Y(0)")
+            + _cell(row["y1_value"], row["y1_observed"], "Y(1)")
+            + (
+                f"<td style='{_STYLE_OBSERVED}' aria-label='observed outcome'>"
+                f"&#9733; {row['outcome']}<br><small>observed</small></td>"
+            )
+            + "</tr>"
         )
 
     return (
-        "<table style='border-collapse:collapse; width:100%; font-size:0.9rem;'>"
+        "<table role='table' style='border-collapse:collapse; width:100%; font-size:0.9rem;'>"
         f"<thead><tr>{th_cells}</tr></thead>"
         f"<tbody>{''.join(html_rows)}</tbody>"
         "</table>"

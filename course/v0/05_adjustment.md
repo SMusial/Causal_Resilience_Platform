@@ -8,13 +8,35 @@ Apply outcome regression (standardization) and inverse-probability weighting
 to recover the ATE under confounded assignment, and explain what each method
 requires to be valid.
 
-## The problem
+## Causal question
 
-Under confounded assignment, the crude difference in means is biased because
-severity is a common cause of treatment and outcome. To estimate the ATE we
-must block the backdoor path `treatment ← severity → outcome`.
+Among eligible synthetic telecom incidents at detection, what is the average
+effect of assigning **EARLY_COORDINATED_RESPONSE** rather than
+**MONITOR_REASSESS** on `customer_impact_minutes_24h` during the following
+24 hours?
 
-## Standardization (g-formula)
+## Treatment and comparator
+
+- **Intervention:** `EARLY_COORDINATED_RESPONSE`
+- **Comparator:** `MONITOR_REASSESS`
+- **Outcome:** `customer_impact_minutes_24h` (lower is better)
+- **Follow-up:** 24 hours from detection
+
+## Estimand
+
+```
+ATE = E[Y(1) - Y(0)]   on the mean-difference scale
+```
+
+## Estimators
+
+### Crude difference in means (biased under confounding)
+
+```
+ATE_hat = mean(Y | A=1) - mean(Y | A=0)
+```
+
+### Standardization (g-formula)
 
 1. Fit an outcome model: `E[Y | A, severity]` using OLS.
 2. For every episode, predict `Y_hat(1)` (set A=1) and `Y_hat(0)` (set A=0).
@@ -25,7 +47,7 @@ the confounding by severity.
 
 **Requires:** correct outcome-model specification.
 
-## Inverse-probability weighting (IPW)
+### Inverse-probability weighting (IPW)
 
 1. Fit a propensity model: `P(A=1 | severity)` using logistic regression.
 2. Weight each episode by `1 / P(A=a_i | severity_i)`.
@@ -36,11 +58,29 @@ groups, removing the backdoor path.
 
 **Requires:** correct propensity-model specification and positivity.
 
-## Shared identification requirements
+## Identification assumptions
 
-- Conditional exchangeability: `Y(a) ⊥ A | severity`
-- Positivity: `0 < P(A=1 | severity=l) < 1` for all `l` in the target population
-- Consistency: observed outcome equals potential outcome under assigned treatment
+1. Consistency: observed outcome equals potential outcome under assigned treatment.
+2. Exchangeability: Y(a) ⊥ A | severity (conditional on measured severity).
+3. Positivity: 0 < P(A=1 | severity=l) < 1 for all l.
+4. No interference: one episode's treatment does not affect another's outcome.
+5. Complete follow-up: 24-hour outcome is observed for all eligible episodes.
+
+## Uncertainty
+
+> **The 95% bootstrap CI reflects sampling variability only.**
+> It does not quantify uncertainty from unmeasured confounding.
+> A narrow CI under strong unmeasured confounding is false precision.
+
+## Limitation
+
+Both estimators assume the adjustment model is correctly specified.
+Standardization is biased if the outcome model is misspecified.
+IPW is biased if the propensity model is misspecified.
+Neither method can adjust for unmeasured confounders.
+
+> All data are entirely synthetic and illustrative. Results do not represent
+> real telecom operations, real organizations, or real interventions.
 
 ## Reflection
 

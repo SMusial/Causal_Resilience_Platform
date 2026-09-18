@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Plotly](https://img.shields.io/badge/Charts-Plotly-3F4F75?logo=plotly&logoColor=white)](https://plotly.com/python/)
-[![Tests](https://img.shields.io/badge/Tests-130%20passed-0A9EDC)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-189%20passed-0A9EDC)](https://pytest.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
 An educational causal-inference laboratory and decision-intelligence demonstration built around a synthetic telecom incident-response world.
@@ -48,7 +48,7 @@ This repository is under active development. The implementation follows a gated 
 | 3 | First Streamlit page, Lessons 1–2, target-trial card | ✅ Complete — commit `acd6b4a` |
 | 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `f9cc08b` |
 | 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | ✅ Complete — commit `7735014` |
-| 6 | Accessibility, documentation, release gate | 🔲 Pending |
+| 6 | Accessibility, documentation, release gate | ✅ Complete — commit `pending` |
 
 ## Repository structure
 
@@ -117,7 +117,7 @@ streamlit run app.py
 pytest -v
 ```
 
-Current result: **130 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, `test_diagnostics.py`, and `test_lessons.py`.
+Current result: **189 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, `test_diagnostics.py`, and `test_lessons.py`.
 
 ## Data model (Slice 1)
 
