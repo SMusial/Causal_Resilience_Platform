@@ -48,7 +48,7 @@ This repository is under active development. The implementation follows a gated 
 | 3 | First Streamlit page, Lessons 1–2, target-trial card | ✅ Complete — commit `acd6b4a` |
 | 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `f9cc08b` |
 | 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | ✅ Complete — commit `7735014` |
-| 6 | Accessibility, documentation, release gate | ✅ Complete — commit `pending` |
+| 6 | Accessibility, documentation, release gate | ✅ Complete — commit `f7d514b` |
 
 ## Repository structure
 
