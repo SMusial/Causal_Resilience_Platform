@@ -279,6 +279,14 @@ V0 is the conceptual and software foundation for the full V1 Telecom Causal Resi
 
 V1 must reuse V0's definitions of treatment, outcome, estimand, assumptions, estimate result, and provenance without silently redefining them.
 
+## Pedagogical review
+
+A full pedagogical review of V0 (Lessons 1–6) was completed after Slice 6. The review covers learning objectives, causal correctness, accessibility, consistency between UI/documentation/implementation/tests, and a V0 release readiness checklist.
+
+Report: [`docs/reviews/v0_pedagogical_review.md`](docs/reviews/v0_pedagogical_review.md)
+
+Verdict: **Ready for supervised use.** One major gap identified (stratification as first adjustment method, per spec §10.2) and four minor improvements recommended. All 189 tests pass. No oracle leakage. WCAG AA accessibility confirmed.
+
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) for details.
