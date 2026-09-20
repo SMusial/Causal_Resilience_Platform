@@ -82,6 +82,9 @@ Causal_Resilience_Platform/
 │       ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
 │       └── test_lessons.py         # Lesson content and table tests (Slice 3/5)
 ├── docs/
+│   ├── guides/
+│   │   ├── causal-inference-ch1-churn-use-case.pdf  # Chapter 1 applied guide
+│   │   └── causal-inference-ch2-churn-use-case.pdf  # Chapter 2 applied guide
 │   └── sources/
 │       └── whatif.pdf              # Hernán & Robins, Causal Inference: What If
 └── .kiro/
@@ -257,9 +260,18 @@ V0 is a six-lesson guided sequence. Each lesson has a learning objective, a shor
 
 ## Methodological foundation
 
-The primary source is Hernán MA, Robins JM, [*Causal Inference: What If*](https://miguelhernan.org/whatifbook). V0 draws on Chapters 1–3 and selected material from Chapter 6.
+The primary source is Hernán MA, Robins JM, [*Causal Inference: What If*](https://miguelhernan.org/whatifbook) (free PDF: [`docs/sources/whatif.pdf`](docs/sources/whatif.pdf)). V0 draws on Chapters 1–3 and selected material from Chapter 6.
 
 The project follows the book's central discipline: define the causal question, population, intervention, comparator, outcome, time zero, follow-up, and identification assumptions before selecting an estimator or displaying a number.
+
+### Chapter guides
+
+Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/guides/`](docs/guides/):
+
+| Chapter | Topic | Guide |
+|---|---|---|
+| 1 | A definition of causal effect | [causal-inference-ch1-churn-use-case.pdf](docs/guides/causal-inference-ch1-churn-use-case.pdf) |
+| 2 | Randomized experiments | [causal-inference-ch2-churn-use-case.pdf](docs/guides/causal-inference-ch2-churn-use-case.pdf) |
 
 ## What is explicitly out of scope for V0
 
