@@ -274,6 +274,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 2 | Randomized experiments | [causal-inference-ch2-churn-use-case.pdf](docs/guides/causal-inference-ch2-churn-use-case.pdf) |
 | 3 | Observational studies | [causal-inference-ch3-churn-use-case.pdf](docs/guides/causal-inference-ch3-churn-use-case.pdf) |
 | 4 | Effect modification | [causal-inference-ch4-churn-use-case.pdf](docs/guides/causal-inference-ch4-churn-use-case.pdf) |
+| 5 | Interaction | [causal-inference-ch5-churn-use-case.pdf](docs/guides/causal-inference-ch5-churn-use-case.pdf) |
 
 ## What is explicitly out of scope for V0
 
