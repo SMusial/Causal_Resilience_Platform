@@ -6,17 +6,17 @@
 [![Tests](https://img.shields.io/badge/Tests-189%20passed-0A9EDC)](https://pytest.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
-An educational causal-inference laboratory and decision-intelligence demonstration built around a synthetic telecom incident-response world.
+A causal-inference laboratory and decision-intelligence demonstration built around a synthetic telecom incident-response world.
 
 > All data, incidents, organizations, and results in this repository are entirely synthetic and illustrative. Nothing here constitutes evidence about real telecom operations, real organizations, or real interventions.
 
-## What this project teaches
+## What this project demonstrates
 
-The project studies one practical question:
+The project addresses one practical question:
 
 > For a service-affecting incident, what would the outcome have been if the organization had applied intervention A instead of a feasible alternative B at the defined decision time?
 
-It teaches the difference between:
+It demonstrates the difference between:
 
 - predicting an outcome
 - estimating the effect of an intervention
@@ -45,16 +45,16 @@ This repository is under active development. The implementation follows a gated 
 |---|---|---|
 | 1 | Schemas, provenance, dependencies, tests | ✅ Complete — commit `0bbe918` |
 | 2 | Structural DGP, randomized contrast, oracle | ✅ Complete — commit `75cb440` |
-| 3 | First Streamlit page, Lessons 1–2, target-trial card | ✅ Complete — commit `acd6b4a` |
-| 4 | Confounding, DAG, Lessons 3–4 | ✅ Complete — commit `f9cc08b` |
-| 5 | Adjustment, IPW, diagnostics, Lessons 5–6 | ✅ Complete — commit `7735014` |
+| 3 | First Streamlit page, causal question and potential outcomes, target-trial card | ✅ Complete — commit `acd6b4a` |
+| 4 | Confounding and DAG | ✅ Complete — commit `f9cc08b` |
+| 5 | Adjustment, IPW, and diagnostics | ✅ Complete — commit `7735014` |
 | 6 | Accessibility, documentation, release gate | ✅ Complete — commit `f7d514b` |
 
 ## Repository structure
 
 ```text
 Causal_Resilience_Platform/
-├── app.py                          # Streamlit application — 6 lessons + sandbox
+├── app.py                          # Streamlit application — 6 analytical modules + sandbox
 ├── pyproject.toml                  # Package config and pinned dependencies
 ├── requirements.txt                # Direct pip install
 ├── src/
@@ -64,7 +64,7 @@ Causal_Resilience_Platform/
 │           ├── dgp.py              # Structural data-generating process (Slice 2+)
 │           ├── estimators.py       # DiM, Standardization, IPW (Slice 2/5)
 │           ├── diagnostics.py      # Overlap, balance, weight diagnostics (Slice 5)
-│           ├── lessons.py          # Course lesson content, Lessons 1–6 (Slice 3/5)
+│           ├── lessons.py          # Analytical module content, modules 1–6 (Slice 3/5)
 │           └── tables.py           # Potential-outcome table rendering (Slice 3)
 ├── course/
 │   └── v0/
@@ -80,7 +80,7 @@ Causal_Resilience_Platform/
 │       ├── test_dgp.py             # DGP and ground-truth tests (Slice 2)
 │       ├── test_estimators.py      # DiM, Standardization, IPW tests (Slice 2/5)
 │       ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
-│       └── test_lessons.py         # Lesson content and table tests (Slice 3/5)
+│       └── test_lessons.py         # Analytical module and table tests (Slice 3/5)
 ├── docs/
 │   ├── guides/
 │   │   ├── causal-inference-ch1-churn-use-case.pdf  # Chapter 1 applied guide
@@ -243,13 +243,13 @@ Every causal result in this project is conditional on the following assumptions 
 4. **No interference** — one episode's treatment does not affect another episode's outcome (V0 simplification; relaxed in V1).
 5. **Complete follow-up** — the 24-hour outcome is observed for all eligible episodes (V0 simplification).
 
-These assumptions cannot be verified from observed data alone. The simulator's structural data-generating process makes them true by construction in the teaching scenarios, which is why the oracle comparison is a useful learning tool but not evidence about real operations.
+These assumptions cannot be verified from observed data alone. The simulator's structural data-generating process makes them true by construction, which is why the oracle comparison is a useful validation tool but not evidence about real operations.
 
-## V0 course outline
+## Analytical modules
 
-V0 is a six-lesson guided sequence. Each lesson has a learning objective, a short explanation, one interactive visual, one estimate or diagnostic, an interpretation, and a source reference.
+The application is structured as six analytical modules, each covering one step of the causal-inference pipeline with an interactive visual, an estimate or diagnostic, and an interpretation.
 
-| Lesson | Topic |
+| Module | Topic |
 |---|---|
 | 1 | Ask a causal question — population, intervention, comparator, outcome, time zero |
 | 2 | Potential outcomes and the missing counterfactual |
@@ -285,7 +285,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 - Doubly robust estimation or cross-fitting
 - Instrumental variables, survival analysis, mediation, or longitudinal methods
 - Interference estimation
-- DoWhy or EconML (introduced in V1 after the concepts are understood)
+- DoWhy or EconML (introduced in V1)
 - R or Rust implementation
 - Real telecom data or operational-system integration
 
