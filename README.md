@@ -43,12 +43,12 @@ This repository is under active development. The implementation follows a gated 
 
 | Slice | Scope | Status |
 |---|---|---|
-| 1 | Schemas, provenance, dependencies, tests | ✅ Complete — commit `0bbe918` |
-| 2 | Structural DGP, randomized contrast, oracle | ✅ Complete — commit `75cb440` |
-| 3 | First Streamlit page, causal question and potential outcomes, target-trial card | ✅ Complete — commit `acd6b4a` |
-| 4 | Confounding and DAG | ✅ Complete — commit `f9cc08b` |
-| 5 | Adjustment, IPW, and diagnostics | ✅ Complete — commit `7735014` |
-| 6 | Accessibility, documentation, release gate | ✅ Complete — commit `f7d514b` |
+| 1 | Schemas, provenance, dependencies, tests | ✅ Complete |
+| 2 | Structural DGP, randomized contrast, oracle | ✅ Complete |
+| 3 | First Streamlit page, causal question and potential outcomes, target-trial card | ✅ Complete |
+| 4 | Confounding and DAG | ✅ Complete |
+| 5 | Adjustment, IPW, and diagnostics | ✅ Complete |
+| 6 | Accessibility, documentation, release gate | ✅ Complete |
 
 ## Repository structure
 
