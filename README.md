@@ -37,18 +37,62 @@ Y(0) = customer_impact_minutes_24h under MONITOR_REASSESS
 
 A negative ATE means early coordinated response reduces average customer impact.
 
-## Implementation status
+## Analytical modules
 
-This repository is under active development. The implementation follows a gated slice plan. Each slice is reviewed before the next begins.
+The application walks through six modules that form a complete causal-inference pipeline. Each module has an interactive visual, a live estimate or diagnostic, and an interpretation grounded in the target trial.
 
-| Slice | Scope | Status |
+| Module | Topic | What you see |
 |---|---|---|
-| 1 | Schemas, provenance, dependencies, tests | ✅ Complete |
-| 2 | Structural DGP, randomized contrast, oracle | ✅ Complete |
-| 3 | First Streamlit page, causal question and potential outcomes, target-trial card | ✅ Complete |
-| 4 | Confounding and DAG | ✅ Complete |
-| 5 | Adjustment, IPW, and diagnostics | ✅ Complete |
-| 6 | Accessibility, documentation, release gate | ✅ Complete |
+| 1 | Ask a causal question | Define population, intervention, comparator, outcome, and time zero using a structured target-trial card |
+| 2 | Potential outcomes | Explore the fundamental problem of causal inference — the missing counterfactual — with an oracle comparison |
+| 3 | Randomization | See when and why association equals causation; contrast randomized vs confounded assignment |
+| 4 | Confounding and the DAG | Visualize how severity drives both treatment and outcome; understand what adjustment is needed and why |
+| 5 | Adjustment | Apply standardization (g-formula) and inverse-probability weighting; compare adjusted estimates to the oracle ATE |
+| 6 | Diagnostics | Inspect overlap, weight distribution, effective sample size, and covariate balance before trusting any estimate |
+
+## How it was built — V0 slice plan
+
+V0 was delivered in six gated slices. Each slice was reviewed and tested before the next began.
+
+| Slice | What was built | Status |
+|---|---|---|
+| 1 | Data contracts, provenance tracking, reproducible episode schema, full test harness | ✅ Complete |
+| 2 | Structural data-generating process with oracle ground truth; randomized, confounded, and limited-overlap assignment modes; difference-in-means estimator | ✅ Complete |
+| 3 | First Streamlit page; causal question framing; potential outcomes with oracle reveal; target-trial card | ✅ Complete |
+| 4 | Confounding module; DAG visualization; side-by-side randomized vs confounded comparison | ✅ Complete |
+| 5 | Standardization and IPW estimators; overlap, weight, and balance diagnostics; oracle recovery validation | ✅ Complete |
+| 6 | Accessibility audit, WCAG AA compliance, full documentation, release gate | ✅ Complete |
+
+## Identification assumptions
+
+Every causal result in this project is conditional on the following assumptions being stated and examined:
+
+1. **Consistency** — the observed outcome equals the potential outcome under the assigned treatment.
+2. **Exchangeability** — conditional on measured severity, potential outcomes are independent of treatment assignment.
+3. **Positivity** — every severity level in the target population has a positive probability of receiving either intervention.
+4. **No interference** — one episode's treatment does not affect another episode's outcome (V0 simplification; relaxed in V1).
+5. **Complete follow-up** — the 24-hour outcome is observed for all eligible episodes (V0 simplification).
+
+These assumptions cannot be verified from observed data alone. The simulator's structural data-generating process makes them true by construction, which is why the oracle comparison is a useful validation tool but not evidence about real operations.
+
+## Methodological foundation
+
+The primary source is Hernán MA, Robins JM, [*Causal Inference: What If*](https://miguelhernan.org/whatifbook) (free PDF: [`docs/sources/whatif.pdf`](docs/sources/whatif.pdf)). V0 draws on Chapters 1–3 and selected material from Chapter 6.
+
+The project follows the book's central discipline: define the causal question, population, intervention, comparator, outcome, time zero, follow-up, and identification assumptions before selecting an estimator or displaying a number.
+
+### Chapter guides
+
+Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/guides/`](docs/guides/):
+
+| Chapter | Topic | Guide |
+|---|---|---|
+| 1 | A definition of causal effect | [causal-inference-ch1-churn-use-case.pdf](docs/guides/causal-inference-ch1-churn-use-case.pdf) |
+| 2 | Randomized experiments | [causal-inference-ch2-churn-use-case.pdf](docs/guides/causal-inference-ch2-churn-use-case.pdf) |
+| 3 | Observational studies | [causal-inference-ch3-churn-use-case.pdf](docs/guides/causal-inference-ch3-churn-use-case.pdf) |
+| 4 | Effect modification | [causal-inference-ch4-churn-use-case.pdf](docs/guides/causal-inference-ch4-churn-use-case.pdf) |
+| 5 | Interaction | [causal-inference-ch5-churn-use-case.pdf](docs/guides/causal-inference-ch5-churn-use-case.pdf) |
+| 6 | Graphical representation of causal effects | [causal-inference-ch6-churn-use-case.pdf](docs/guides/causal-inference-ch6-churn-use-case.pdf) |
 
 ## Repository structure
 
@@ -67,13 +111,7 @@ Causal_Resilience_Platform/
 │           ├── lessons.py          # Analytical module content, modules 1–6 (Slice 3/5)
 │           └── tables.py           # Potential-outcome table rendering (Slice 3)
 ├── course/
-│   └── v0/
-│       ├── 01_causal_question.md
-│       ├── 02_potential_outcomes.md
-│       ├── 03_randomization.md
-│       ├── 04_confounding.md
-│       ├── 05_adjustment.md
-│       └── 06_diagnostics.md
+│   └── v0/                         # Analytical module reference documents
 ├── tests/
 │   └── foundations/
 │       ├── test_schemas.py         # Schema validation tests (Slice 1)
@@ -82,9 +120,7 @@ Causal_Resilience_Platform/
 │       ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
 │       └── test_lessons.py         # Analytical module and table tests (Slice 3/5)
 ├── docs/
-│   ├── guides/
-│   │   ├── causal-inference-ch1-churn-use-case.pdf  # Chapter 1 applied guide
-│   │   └── causal-inference-ch2-churn-use-case.pdf  # Chapter 2 applied guide
+│   ├── guides/                     # Applied chapter guides (telecom churn use case)
 │   └── sources/
 │       └── whatif.pdf              # Hernán & Robins, Causal Inference: What If
 └── .kiro/
@@ -120,164 +156,9 @@ streamlit run app.py
 pytest -v
 ```
 
-Current result: **189 passed** across `test_schemas.py`, `test_dgp.py`, `test_estimators.py`, `test_diagnostics.py`, and `test_lessons.py`.
+189 tests pass across schemas, DGP, estimators, diagnostics, and analytical modules.
 
-## Data model (Slice 1)
-
-The V0 data model separates configuration, episodes, and results into distinct layers.
-
-### Configuration
-
-`ScenarioConfig` holds everything needed to reproduce a run: random seed, number of episodes, assignment mode (randomized, confounded, or limited-overlap), confounding strength, treatment effect magnitude, outcome noise, overlap mode, and a teaching-mode flag.
-
-### Episode
-
-`IncidentEpisode` is the unit of analysis — one synthetic incident. It contains:
-
-- `severity`: continuous baseline confounder in [0, 1], measured before treatment
-- `disturbance_type`: abstract incident category (equipment failure, software regression, misconfiguration, overload, weather disruption, cyber disruption, physical disruption)
-- `treatment`: binary assignment — 1 for `EARLY_COORDINATED_RESPONSE`, 0 for `MONITOR_REASSESS`
-- `outcome`: `customer_impact_minutes_24h`, continuous and non-negative
-
-Oracle fields (`potential_outcome_0`, `potential_outcome_1`, `propensity_true`) are `None` in normal mode and visible only when `teaching_mode=True`. A consistency rule is enforced at construction: the observed outcome must equal the potential outcome under the assigned treatment whenever oracle fields are present.
-
-`FoundationsDataset` wraps a list of episodes with provenance metadata. Its `to_dataframe()` method strips oracle columns in normal mode.
-
-### Results
-
-`GroundTruth` holds the finite-sample ATE and marginal potential-outcome means computed by the structural oracle. It is available only in teaching and test mode.
-
-`Estimand` declares what the analysis is trying to learn: the ATE on the mean-difference scale, with outcome name, units, follow-up period, direction of benefit, and five pre-populated identification assumptions.
-
-`EstimateResult` is the common return object for every estimator. It carries the estimate, confidence interval, standard error, sample sizes, assumptions, structured diagnostics, string warnings, an optional oracle comparison, and provenance. The `has_warnings` property aggregates both string warnings and diagnostic-level warnings.
-
-`Provenance` attaches seed, scenario identifier, generator version, schema version, creation timestamp, and an `oracle_used` flag to every dataset and estimate.
-
-## Data model (Slice 2)
-
-### Structural data-generating process
-
-`TelecomFoundationsDGP` generates synthetic incident episodes using structural equations:
-
-```text
-baseline_impact = 100 + 240 × severity + noise
-Y(0) = max(0, baseline_impact)
-Y(1) = max(0, baseline_impact + treatment_effect + noise_delta)
-```
-
-Default `treatment_effect = −40.0` minutes. Three assignment modes are supported:
-
-- `RANDOMIZED` — 50/50 coin flip, no confounding
-- `CONFOUNDED` — logistic propensity driven by severity
-- `LIMITED_OVERLAP` — extreme-severity episodes receive near-deterministic assignment
-
-Oracle fields are populated only when `teaching_mode=True`. `truth()` returns a `GroundTruth` object with the finite-sample ATE computed directly from potential outcomes.
-
-## Estimators (Slices 2 and 5)
-
-All estimators share the `CausalEstimator` protocol, return a fully populated `EstimateResult`, and use a nonparametric bootstrap for uncertainty. The bootstrap interval reflects sampling variability only — it does not quantify unmeasured-confounding uncertainty.
-
-### Difference in means
-
-```text
-ATE_hat = mean(Y | A=1) − mean(Y | A=0)
-```
-
-Valid under randomization. Biased under confounded assignment without adjustment.
-
-### Standardization (g-formula)
-
-```text
-1. Fit E[Y | A, severity] with OLS.
-2. Predict Y_hat(1) and Y_hat(0) for every episode.
-3. ATE_hat = mean(Y_hat(1) − Y_hat(0))
-```
-
-Requires correct outcome-model specification. Under the correctly specified linear DGP, recovers the oracle ATE within 5 minutes at n=3000.
-
-### Inverse-probability weighting
-
-```text
-1. Fit P(A=1 | severity) with logistic regression.
-2. Weight each episode by 1 / P(A=a_i | severity_i).
-3. ATE_hat = weighted_mean(Y | A=1) − weighted_mean(Y | A=0)
-```
-
-Requires correct propensity-model specification and positivity. Under the correctly specified DGP, recovers the oracle ATE within 5 minutes at n=3000.
-
-## Diagnostics (Slice 5)
-
-`diagnostics.py` provides three checks that must be examined before interpreting any adjusted estimate.
-
-### Overlap
-
-`compute_overlap` assesses whether propensity scores for treated and control episodes span a common range. Episodes with propensity within 0.05 of 0 or 1 are flagged as near-boundary. Non-overlapping ranges trigger a positivity warning.
-
-### Weight distribution and effective sample size
-
-`compute_weight_diagnostic` summarises the IPW weight distribution and computes the Kish effective sample size:
-
-```text
-ESS = (sum w)² / sum(w²)
-```
-
-Weights above the configurable threshold (default 10) are flagged as extreme. A low ESS relative to the nominal sample size indicates the estimate is driven by a small number of episodes.
-
-### Covariate balance
-
-`compute_balance` computes the standardized mean difference (SMD) for severity before and after IPW weighting:
-
-```text
-SMD = |mean_treated − mean_control| / pooled_sd
-```
-
-SMD < 0.1 is the conventional threshold for adequate balance. Under correctly specified IPW, the weighted SMD should be substantially smaller than the unweighted SMD.
-
-## Identification assumptions
-
-Every causal result in this project is conditional on the following assumptions being stated and examined:
-
-1. **Consistency** — the observed outcome equals the potential outcome under the assigned treatment.
-2. **Exchangeability** — conditional on measured severity, potential outcomes are independent of treatment assignment.
-3. **Positivity** — every severity level in the target population has a positive probability of receiving either intervention.
-4. **No interference** — one episode's treatment does not affect another episode's outcome (V0 simplification; relaxed in V1).
-5. **Complete follow-up** — the 24-hour outcome is observed for all eligible episodes (V0 simplification).
-
-These assumptions cannot be verified from observed data alone. The simulator's structural data-generating process makes them true by construction, which is why the oracle comparison is a useful validation tool but not evidence about real operations.
-
-## Analytical modules
-
-The application is structured as six analytical modules, each covering one step of the causal-inference pipeline with an interactive visual, an estimate or diagnostic, and an interpretation.
-
-| Module | Topic |
-|---|---|
-| 1 | Ask a causal question — population, intervention, comparator, outcome, time zero |
-| 2 | Potential outcomes and the missing counterfactual |
-| 3 | Randomization: when association can identify causation |
-| 4 | Confounding and the DAG |
-| 5 | Adjustment: standardization and IPW |
-| 6 | Diagnostics, uncertainty, and responsible interpretation |
-
-## Methodological foundation
-
-The primary source is Hernán MA, Robins JM, [*Causal Inference: What If*](https://miguelhernan.org/whatifbook) (free PDF: [`docs/sources/whatif.pdf`](docs/sources/whatif.pdf)). V0 draws on Chapters 1–3 and selected material from Chapter 6.
-
-The project follows the book's central discipline: define the causal question, population, intervention, comparator, outcome, time zero, follow-up, and identification assumptions before selecting an estimator or displaying a number.
-
-### Chapter guides
-
-Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/guides/`](docs/guides/):
-
-| Chapter | Topic | Guide |
-|---|---|---|
-| 1 | A definition of causal effect | [causal-inference-ch1-churn-use-case.pdf](docs/guides/causal-inference-ch1-churn-use-case.pdf) |
-| 2 | Randomized experiments | [causal-inference-ch2-churn-use-case.pdf](docs/guides/causal-inference-ch2-churn-use-case.pdf) |
-| 3 | Observational studies | [causal-inference-ch3-churn-use-case.pdf](docs/guides/causal-inference-ch3-churn-use-case.pdf) |
-| 4 | Effect modification | [causal-inference-ch4-churn-use-case.pdf](docs/guides/causal-inference-ch4-churn-use-case.pdf) |
-| 5 | Interaction | [causal-inference-ch5-churn-use-case.pdf](docs/guides/causal-inference-ch5-churn-use-case.pdf) |
-| 6 | Graphical representation of causal effects | [causal-inference-ch6-churn-use-case.pdf](docs/guides/causal-inference-ch6-churn-use-case.pdf) |
-
-## What is explicitly out of scope for V0
+## What is out of scope for V0
 
 - NOC, SOC, L1, L2, L3, and Field Operations as separate treatment options
 - Dynamic state transitions or sequential treatment decisions
