@@ -170,11 +170,73 @@ pytest -v
 - R or Rust implementation
 - Real telecom data or operational-system integration
 
-## Relationship to V1
+## V1 — planned platform extension
 
-V0 is the conceptual and software foundation for the full V1 Telecom Causal Resilience platform. V1 will extend V0 with dynamic incident episodes, six operational roles, seven response protocols, shared resource constraints, richer confounding, doubly robust estimation, policy evaluation, and a formal domain-adapter contract.
+V0 is the foundation. V1 extends it into a full causal-inference and decision-intelligence platform without replacing or redefining any V0 concept.
 
-V1 must reuse V0's definitions of treatment, outcome, estimand, assumptions, estimate result, and provenance without silently redefining them.
+### What V1 adds
+
+| Area | V0 | V1 |
+|---|---|---|
+| Incident model | Single binary contrast, static covariates | Dynamic state transitions, 15-min decision steps, 24h follow-up |
+| Roles and protocols | Two protocols (treatment vs comparator) | Six operational roles, seven response protocols, eligibility enforcement |
+| Confounding | Severity-driven logistic propensity | Latent readiness, topology criticality, team backlog, measurement error, missingness |
+| Estimators | DiM, standardization, IPW | + Doubly robust, stratified adjustment, subgroup/CATE, policy value |
+| Policy layer | None | Constrained allocation across six roles; capacity, safety, budget, SLA hard gates |
+| Diagnostics | Overlap, balance, ESS | + Assumption-warning panel, trade-off frontier, counterfactual distributions |
+| Tooling | SciPy, scikit-learn | + DoWhy, EconML, statsmodels |
+| Analytical modules | 6 | 13 guided modules + experimental sandbox |
+
+### V1 analytical modules (planned)
+
+| Module | Topic |
+|---|---|
+| 1 | Ask a causal question — target trial, estimand, population, time zero |
+| 2 | Potential outcomes and the fundamental problem of causal inference |
+| 3 | Randomization — when association equals causation |
+| 4 | Observational assignment — confounding, bias, and the naive estimator |
+| 5 | The DAG — backdoor paths, valid adjustment sets, and collider bias |
+| 6 | Selection bias and measurement error as controlled failure scenarios |
+| 7 | Effect modification — subgroup effects by disturbance type, severity, and criticality |
+| 8 | Outcome regression and the g-formula |
+| 9 | Propensity scores, IPW, and overlap diagnostics |
+| 10 | Doubly robust estimation |
+| 11 | Subgroup effects and CATE — demonstrations with support warnings |
+| 12 | Policy evaluation — causal targeting vs risk targeting vs current practice |
+| 13 | Audit and limitations — target trial, assumptions, diagnostics, uncertainty, provenance |
+
+### How V1 sits alongside V0 in the repository
+
+V1 does not overwrite V0. Both versions coexist under the same repository root. V0 foundations remain importable and tested independently.
+
+```text
+Causal_Resilience_Platform/
+├── app.py                          # Entry point — routes to V0 or V1 UI
+├── src/
+│   └── causal_resilience/
+│       ├── foundations/            # V0 — schemas, DGP, estimators, diagnostics, modules
+│       └── v1/                     # V1 — new layers added on top of foundations
+│           ├── domain/             # DomainAdapter contract + telecom implementation
+│           ├── simulation/         # Dynamic state transitions, structural model, policies
+│           ├── causal/             # Extended estimators: DR, CATE, policy value
+│           ├── policy/             # Constrained allocator, capacity, hard gates
+│           ├── explanations.py     # Audit cards, assumption warnings, provenance
+│           └── visualization.py    # Extended Plotly views: timeline, DAG, frontier
+├── course/
+│   ├── v0/                         # V0 analytical module reference documents
+│   └── v1/                         # V1 analytical module reference documents
+├── tests/
+│   ├── foundations/                # V0 test suite (189 tests, unchanged)
+│   └── v1/                         # V1 test suite (added alongside, never replacing)
+├── docs/
+│   ├── guides/                     # Applied chapter guides (telecom churn use case)
+│   └── sources/
+│       └── whatif.pdf              # Hernán & Robins, Causal Inference: What If
+└── .kiro/
+    └── specs/causal-resilience/    # V0 and V1 specifications
+```
+
+V1 must reuse V0's definitions of treatment, outcome, estimand, assumptions, estimate result, and provenance without silently redefining them. The `DomainAdapter` contract allows future industry adapters to plug in without modifying the causal estimator APIs.
 
 ## License
 
