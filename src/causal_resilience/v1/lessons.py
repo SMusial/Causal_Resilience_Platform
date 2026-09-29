@@ -22,6 +22,23 @@ LESSON_V1_01 = LessonContent(
         "comparator, outcome, time zero, follow-up, and the minimum "
         "sufficient adjustment set under the V1 baseline DAG."
     ),
+    causal_question=(
+        "Among eligible synthetic telecom incidents at detection, what is the "
+        "average effect of COORDINATED_RESPONSE versus MONITOR_REASSESS on "
+        "customer_impact_minutes_24h during the following 24 hours?"
+    ),
+    treatment="COORDINATED_RESPONSE — predefined multi-role coordination bundle within 15 min of detection",
+    comparator="MONITOR_REASSESS — monitor and reassess at the 60-minute checkpoint",
+    outcome="customer_impact_minutes_24h — total customer-impact minutes over 24 hours (lower is better)",
+    follow_up="24 hours from first reliable detection timestamp",
+    estimand="ATE = E[Y(1) - Y(0)] on the mean-difference scale; secondary: risk difference for sla_breach_24h",
+    assumptions=[
+        "Consistency: observed outcome equals potential outcome under assigned treatment.",
+        "Exchangeability: Y(a) \u22a5 A | {severity, topology_criticality, team_backlog, operational_readiness}.",
+        "Positivity: every severity-criticality-backlog-readiness stratum has positive probability of either protocol.",
+        "No interference: one episode's treatment does not affect another's outcome (V1 simplification).",
+        "Complete follow-up: 24-hour outcome is observed for all eligible episodes (V1 simplification).",
+    ],
     explanation=(
         "V1 extends the V0 causal question to a richer operational world: "
         "six roles, seven protocols, and multiple baseline confounders.\n\n"
@@ -42,7 +59,7 @@ LESSON_V1_01 = LessonContent(
         "Source: Hernán & Robins, What If, Chapter 3 (§3.1-3.2)."
     ),
     visual_keys=["v1_target_trial_card", "v1_protocol_table", "v1_estimand_card"],
-    estimate_or_diagnostic=(
+    estimator_or_diagnostic=(
         "Read the V1 target-trial card. Identify the primary and secondary "
         "estimands. Note the expanded adjustment set and explain why each "
         "variable belongs there."
@@ -52,6 +69,12 @@ LESSON_V1_01 = LessonContent(
         "discipline: question first, estimand second, estimator third. "
         "The additional confounders reflect a richer operational world — "
         "they do not change the fundamental identification logic."
+    ),
+    limitation=(
+        "V1 uses a richer confounder set than V0 but still simplifies the "
+        "operational world. Unmeasured confounders (e.g., team experience, "
+        "vendor relationships) are not captured. Adjustment for the four "
+        "measured confounders cannot remove bias from variables not recorded."
     ),
     reflection=(
         "Why is COORDINATED_RESPONSE defined as a fixed bundle rather than "
