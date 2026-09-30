@@ -19,7 +19,7 @@ from causal_resilience.foundations.lessons import (
 from causal_resilience.foundations.diagnostics import compute_overlap, compute_weight_diagnostic, compute_balance
 from causal_resilience.foundations.tables import build_po_table_rows, render_po_table
 from causal_resilience.v1.schemas import V1_TARGET_TRIAL, V1Estimand, Protocol
-from causal_resilience.v1.lessons import LESSON_V1_01
+from causal_resilience.v1.lessons import LESSON_V1_01, LESSON_V1_02
 
 _C_ECR    = "#0072b2"
 _C_MR     = "#d55e00"
@@ -70,6 +70,7 @@ page = st.sidebar.radio(
         "V0 L6 \u2014 Diagnostics",
         "V0 Sandbox",
         "V1 M1 \u2014 Causal question",
+        "V1 M2 \u2014 Potential outcomes",
     ],
     index=0,
     key="page",
@@ -594,3 +595,64 @@ elif page == "V1 M1 \u2014 Causal question":
         st.write(f"  \u2022 {a}")
     st.subheader("Reflection")
     st.info(LESSON_V1_01.reflection)
+
+elif page == "V1 M2 \u2014 Potential outcomes":
+    st.title(f"V1 Module 2: {LESSON_V1_02.title}")
+    st.caption(f"Source: {LESSON_V1_02.source_reference}")
+    _lesson_header(LESSON_V1_02)
+    st.subheader("Learning objective")
+    st.write(LESSON_V1_02.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_V1_02.explanation)
+    st.subheader("V0 vs V1 — what changes")
+    st.table(pd.DataFrame([
+        ("Treatment label",  "EARLY_COORDINATED_RESPONSE", "COORDINATED_RESPONSE"),
+        ("Adjustment set",   "severity only",              "severity, topology_criticality, team_backlog, operational_readiness"),
+        ("Fundamental problem", "missing counterfactual",  "missing counterfactual (unchanged)"),
+        ("Oracle availability", "teaching mode only",      "teaching mode only (unchanged)"),
+    ], columns=["Dimension", "V0", "V1"]))
+    st.subheader("Two-world potential-outcome table")
+    if teaching_mode:
+        st.success(
+            "\u26a0\ufe0f **Teaching mode** \u2014 oracle columns visible. "
+            "In real data only the observed outcome exists. " + ORACLE_CAVEAT
+        )
+        sample = df.head(12)[["episode_id", "severity", "treatment_label",
+                               "potential_outcome_0", "potential_outcome_1", "outcome"]].copy()
+        st.markdown(render_po_table(sample), unsafe_allow_html=True)
+        st.caption("\u2605 Observed outcome (dark blue, bold). [missing] = counterfactual.")
+    else:
+        st.warning("Enable **Teaching mode** to reveal oracle columns (Y(0) and Y(1)).")
+        sample = df.head(12)[["episode_id", "severity", "treatment_label", "outcome"]].copy()
+        sample.columns = ["Episode", "Severity", "Assigned treatment", "Observed outcome"]
+        st.dataframe(sample.style.format({"Severity": "{:.2f}", "Observed outcome": "{:.1f}"}),
+                     use_container_width=True)
+    st.subheader("Observed vs. missing counterfactual")
+    plot_df = df.head(40).copy()
+    fig_po = go.Figure()
+    fig_po.add_trace(go.Scatter(x=plot_df.index, y=plot_df["outcome"],
+                                mode="markers", name="Observed outcome \u25cf",
+                                marker=dict(symbol="circle", size=8, color=_C_ECR)))
+    if teaching_mode:
+        missing = plot_df.apply(
+            lambda r: r["potential_outcome_0"] if r["treatment"] == 1 else r["potential_outcome_1"], axis=1)
+        fig_po.add_trace(go.Scatter(x=plot_df.index, y=missing,
+                                    mode="markers", name="Missing counterfactual \u2715 (oracle only)",
+                                    marker=dict(symbol="x", size=9, color=_C_MR)))
+    fig_po.update_layout(
+        title="First 40 episodes: observed (\u25cf) vs. missing counterfactual (\u2715, oracle only)",
+        xaxis_title="Episode index", yaxis_title="customer_impact_minutes_24h",
+        legend=dict(orientation="h", y=-0.25), height=350,
+    )
+    st.plotly_chart(fig_po, use_container_width=True)
+    if teaching_mode and ground_truth is not None:
+        st.subheader("Oracle ATE (teaching mode only)")
+        st.warning(
+            f"\u2605 Oracle ATE = **{ground_truth.finite_sample_ate:.1f} min** "
+            f"(mean Y(1)={ground_truth.mean_y1:.1f}, mean Y(0)={ground_truth.mean_y0:.1f}). " + ORACLE_CAVEAT
+        )
+    st.subheader("Limitation")
+    st.warning(LESSON_V1_02.limitation)
+    st.subheader("Reflection")
+    st.info(LESSON_V1_02.reflection)
+    _provenance_expander(result.provenance, teaching_mode, int(n_episodes), assignment_mode_label)

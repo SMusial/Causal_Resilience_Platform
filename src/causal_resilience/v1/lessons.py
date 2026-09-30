@@ -86,6 +86,83 @@ LESSON_V1_01 = LessonContent(
 )
 
 
+LESSON_V1_02 = LessonContent(
+    lesson_id="V1-L2",
+    title="Potential outcomes and the missing counterfactual",
+    objective=(
+        "Explain why individual causal effects are not directly observed in "
+        "the V1 operational world, and why the richer V1 confounder set does "
+        "not change the fundamental problem of causal inference."
+    ),
+    causal_question=(
+        "Among eligible synthetic telecom incidents at detection, what is the "
+        "average effect of COORDINATED_RESPONSE versus MONITOR_REASSESS on "
+        "customer_impact_minutes_24h during the following 24 hours?"
+    ),
+    treatment="COORDINATED_RESPONSE \u2014 predefined multi-role coordination bundle within 15 min of detection",
+    comparator="MONITOR_REASSESS \u2014 monitor and reassess at the 60-minute checkpoint",
+    outcome="customer_impact_minutes_24h \u2014 total customer-impact minutes over 24 hours (lower is better)",
+    follow_up="24 hours from first reliable detection timestamp",
+    estimand="ATE = E[Y(1) - Y(0)] on the mean-difference scale",
+    assumptions=[
+        "Consistency: observed outcome equals potential outcome under assigned treatment.",
+        "Exchangeability: Y(a) \u22a5 A | {severity, topology_criticality, team_backlog, operational_readiness}.",
+        "Positivity: every stratum of the adjustment set has positive probability of either protocol.",
+        "No interference: one episode's treatment does not affect another's outcome (V1 simplification).",
+        "Complete follow-up: 24-hour outcome is observed for all eligible episodes (V1 simplification).",
+    ],
+    explanation=(
+        "For each incident episode i, there are two potential outcomes:\n"
+        "  Y_i(1) \u2014 customer impact if the episode receives COORDINATED_RESPONSE\n"
+        "  Y_i(0) \u2014 customer impact if the episode receives MONITOR_REASSESS\n\n"
+        "The individual causal effect is Y_i(1) \u2212 Y_i(0).\n\n"
+        "The fundamental problem of causal inference: we can only observe one "
+        "of the two potential outcomes for each episode. The other is the "
+        "counterfactual \u2014 what would have happened under the alternative.\n\n"
+        "This is true regardless of how many confounders are in the adjustment "
+        "set. Adding severity, topology criticality, team backlog, and "
+        "operational readiness to the V1 world does not make the missing "
+        "counterfactual observable \u2014 it only changes what we must condition "
+        "on to achieve exchangeability.\n\n"
+        "The average treatment effect (ATE) is:\n"
+        "  ATE = E[Y(1) \u2212 Y(0)] = E[Y(1)] \u2212 E[Y(0)]\n\n"
+        "V1 M2 uses the V0 DGP oracle to illustrate the fundamental problem. "
+        "The V1 DGP with four confounders is introduced in later modules.\n\n"
+        "Source: Hern\u00e1n & Robins, What If, Chapter 1 \u2014 individual and average "
+        "causal effects, \u00a71.1\u20131.2."
+    ),
+    visual_keys=["potential_outcome_table", "missing_counterfactual_chart", "v1_vs_v0_comparison"],
+    estimator_or_diagnostic=(
+        "In teaching mode: inspect the two-world table showing Y(0) and Y(1) "
+        "for a small sample. Observe that the observed outcome matches the "
+        "assigned treatment. The other column is the missing counterfactual.\n"
+        "Compare the V0 and V1 adjustment sets. Note that the fundamental "
+        "problem is identical despite the richer V1 world."
+    ),
+    interpretation=(
+        "The oracle ATE is the mean of Y(1) \u2212 Y(0) computed directly from "
+        "the simulator's hidden truth. In real data, this quantity is never "
+        "available. A richer confounder set changes what must be adjusted for "
+        "but does not change the fact that only one potential outcome is "
+        "observed per episode."
+    ),
+    limitation=(
+        "V1 M2 uses the V0 DGP oracle for illustration. The V1 DGP with four "
+        "confounders is introduced in later modules. The V1 adjustment set is "
+        "richer than V0 but still simplified \u2014 unmeasured confounders such as "
+        "team experience and vendor relationships are not captured."
+    ),
+    reflection=(
+        "Does adding more confounders to the adjustment set make the missing "
+        "counterfactual observable? Why or why not? "
+        "Why does the consistency assumption matter more when the treatment is "
+        "a complex bundle like COORDINATED_RESPONSE?"
+    ),
+    source_reference="Hern\u00e1n & Robins, What If, Chapter 1 (\u00a71.1\u20131.2)",
+)
+
+
 V1_LESSONS: dict[str, LessonContent] = {
     LESSON_V1_01.lesson_id: LESSON_V1_01,
+    LESSON_V1_02.lesson_id: LESSON_V1_02,
 }
