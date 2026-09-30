@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![Plotly](https://img.shields.io/badge/Charts-Plotly-3F4F75?logo=plotly&logoColor=white)](https://plotly.com/python/)
-[![Tests](https://img.shields.io/badge/Tests-189%20passed-0A9EDC)](https://pytest.org/)
+[![Tests](https://img.shields.io/badge/Tests-235%20passed-0A9EDC)](https://pytest.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
 A causal-inference laboratory and decision-intelligence demonstration built around a synthetic telecom incident-response world.
@@ -37,9 +37,25 @@ Y(0) = customer_impact_minutes_24h under MONITOR_REASSESS
 
 A negative ATE means early coordinated response reduces average customer impact.
 
-## Analytical modules
+## Navigation
 
-The application walks through six modules that form a complete causal-inference pipeline. Each module has an interactive visual, a live estimate or diagnostic, and an interpretation grounded in the target trial.
+A single sidebar radio selects the active lesson. V0 and V1 lessons are listed together — no tabs.
+
+| Entry | Version | Topic |
+|---|---|---|
+| V0 L1 | V0 | Ask a causal question |
+| V0 L2 | V0 | Potential outcomes |
+| V0 L3 | V0 | Randomization |
+| V0 L4 | V0 | Confounding and the DAG |
+| V0 L5 | V0 | Adjustment |
+| V0 L6 | V0 | Diagnostics |
+| V0 Sandbox | V0 | Full estimator comparison |
+| V1 M1 | V1 | Ask a causal question (extended) |
+| V1 M2 | V1 | Potential outcomes (extended) |
+
+## V0 analytical modules
+
+The V0 pipeline walks through six modules. Each has an interactive visual, a live estimate or diagnostic, and an interpretation grounded in the target trial.
 
 | Module | Topic | What you see |
 |---|---|---|
@@ -98,27 +114,34 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 
 ```text
 Causal_Resilience_Platform/
-├── app.py                          # Streamlit application — 6 analytical modules + sandbox
+├── app.py                          # Streamlit application — V0 L1–L6, Sandbox, V1 M1–M2
 ├── pyproject.toml                  # Package config and pinned dependencies
 ├── requirements.txt                # Direct pip install
 ├── src/
 │   └── causal_resilience/
-│       └── foundations/
-│           ├── schemas.py          # V0 data contracts (Slice 1)
-│           ├── dgp.py              # Structural data-generating process (Slice 2+)
-│           ├── estimators.py       # DiM, Standardization, IPW (Slice 2/5)
-│           ├── diagnostics.py      # Overlap, balance, weight diagnostics (Slice 5)
-│           ├── lessons.py          # Analytical module content, modules 1–6 (Slice 3/5)
-│           └── tables.py           # Potential-outcome table rendering (Slice 3)
+│       ├── foundations/
+│       │   ├── schemas.py          # V0 data contracts (Slice 1)
+│       │   ├── dgp.py              # Structural data-generating process (Slice 2+)
+│       │   ├── estimators.py       # DiM, Standardization, IPW (Slice 2/5)
+│       │   ├── diagnostics.py      # Overlap, balance, weight diagnostics (Slice 5)
+│       │   ├── lessons.py          # V0 lesson content, modules 1–6 (Slice 3/5)
+│       │   └── tables.py           # Potential-outcome table rendering (Slice 3)
+│       └── v1/
+│           ├── schemas.py          # V1 data contracts — TargetTrial, BaselineCovariates, Protocol
+│           └── lessons.py          # V1 lesson content — M1, M2
 ├── course/
-│   └── v0/                         # Analytical module reference documents
+│   ├── v0/                         # V0 analytical module reference documents
+│   └── v1/                         # V1 analytical module reference documents
 ├── tests/
-│   └── foundations/
-│       ├── test_schemas.py         # Schema validation tests (Slice 1)
-│       ├── test_dgp.py             # DGP and ground-truth tests (Slice 2)
-│       ├── test_estimators.py      # DiM, Standardization, IPW tests (Slice 2/5)
-│       ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
-│       └── test_lessons.py         # Analytical module and table tests (Slice 3/5)
+│   ├── foundations/
+│   │   ├── test_schemas.py         # Schema validation tests (Slice 1)
+│   │   ├── test_dgp.py             # DGP and ground-truth tests (Slice 2)
+│   │   ├── test_estimators.py      # DiM, Standardization, IPW tests (Slice 2/5)
+│   │   ├── test_diagnostics.py     # Overlap, weight, balance tests (Slice 5)
+│   │   └── test_lessons.py         # V0 analytical module and table tests (Slice 3/5)
+│   └── v1/
+│       ├── test_schemas.py         # V1 schema validation tests
+│       └── test_lessons.py         # V1 lesson content tests — M1, M2
 ├── docs/
 │   ├── guides/                     # Applied chapter guides (telecom churn use case)
 │   └── sources/
@@ -156,7 +179,7 @@ streamlit run app.py
 pytest -v
 ```
 
-189 tests pass across schemas, DGP, estimators, diagnostics, and analytical modules.
+235 tests pass across schemas, DGP, estimators, diagnostics, V0 analytical modules, and V1 lessons.
 
 ## What is out of scope for V0
 
@@ -187,23 +210,23 @@ V0 is the foundation. V1 extends it into a full causal-inference and decision-in
 | Tooling | SciPy, scikit-learn | + DoWhy, EconML, statsmodels |
 | Analytical modules | 6 | 13 guided modules + experimental sandbox |
 
-### V1 analytical modules (planned)
+### V1 analytical modules
 
-| Module | Topic |
-|---|---|
-| 1 | Ask a causal question — target trial, estimand, population, time zero |
-| 2 | Potential outcomes and the fundamental problem of causal inference |
-| 3 | Randomization — when association equals causation |
-| 4 | Observational assignment — confounding, bias, and the naive estimator |
-| 5 | The DAG — backdoor paths, valid adjustment sets, and collider bias |
-| 6 | Selection bias and measurement error as controlled failure scenarios |
-| 7 | Effect modification — subgroup effects by disturbance type, severity, and criticality |
-| 8 | Outcome regression and the g-formula |
-| 9 | Propensity scores, IPW, and overlap diagnostics |
-| 10 | Doubly robust estimation |
-| 11 | Subgroup effects and CATE — demonstrations with support warnings |
-| 12 | Policy evaluation — causal targeting vs risk targeting vs current practice |
-| 13 | Audit and limitations — target trial, assumptions, diagnostics, uncertainty, provenance |
+| Module | Topic | Status |
+|---|---|---|
+| 1 | Ask a causal question — target trial, estimand, population, time zero | ✅ Complete |
+| 2 | Potential outcomes and the fundamental problem of causal inference | ✅ Complete |
+| 3 | Randomization — when association equals causation | 🔜 Planned |
+| 4 | Observational assignment — confounding, bias, and the naive estimator | 🔜 Planned |
+| 5 | The DAG — backdoor paths, valid adjustment sets, and collider bias | 🔜 Planned |
+| 6 | Selection bias and measurement error as controlled failure scenarios | 🔜 Planned |
+| 7 | Effect modification — subgroup effects by disturbance type, severity, and criticality | 🔜 Planned |
+| 8 | Outcome regression and the g-formula | 🔜 Planned |
+| 9 | Propensity scores, IPW, and overlap diagnostics | 🔜 Planned |
+| 10 | Doubly robust estimation | 🔜 Planned |
+| 11 | Subgroup effects and CATE — demonstrations with support warnings | 🔜 Planned |
+| 12 | Policy evaluation — causal targeting vs risk targeting vs current practice | 🔜 Planned |
+| 13 | Audit and limitations — target trial, assumptions, diagnostics, uncertainty, provenance | 🔜 Planned |
 
 ### How V1 sits alongside V0 in the repository
 
@@ -226,8 +249,8 @@ Causal_Resilience_Platform/
 │   ├── v0/                         # V0 analytical module reference documents
 │   └── v1/                         # V1 analytical module reference documents
 ├── tests/
-│   ├── foundations/                # V0 test suite (189 tests, unchanged)
-│   └── v1/                         # V1 test suite (added alongside, never replacing)
+│   ├── foundations/                # V0 test suite (211 tests, unchanged)
+│   └── v1/                         # V1 test suite (24 tests, added alongside, never replacing)
 ├── docs/
 │   ├── guides/                     # Applied chapter guides (telecom churn use case)
 │   └── sources/
