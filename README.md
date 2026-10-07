@@ -112,7 +112,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 7 | Effect modification | [causal-inference-ch7-churn-use-case.pdf](docs/guides/causal-inference-ch7-churn-use-case.pdf) |
 | 8 | Outcome regression and the g-formula | [causal-inference-ch8-churn-use-case.pdf](docs/guides/causal-inference-ch8-churn-use-case.pdf) |
 | 9 | Propensity scores and IPW | [causal-inference-ch9-churn-use-case.pdf](docs/guides/causal-inference-ch9-churn-use-case.pdf) |
-| 9 | Propensity scores and IPW | [causal-inference-ch9-churn-use-case.pdf](docs/guides/causal-inference-ch9-churn-use-case.pdf) |
+| 10 | Propensity scores and IPW | [causal-inference-ch10-churn-use-case.pdf](docs/guides/causal-inference-ch10-churn-use-case.pdf) |
 
 ## Repository structure
 
