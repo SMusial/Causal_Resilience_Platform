@@ -114,6 +114,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 9 | Propensity scores and IPW | [causal-inference-ch9-churn-use-case.pdf](docs/guides/causal-inference-ch9-churn-use-case.pdf) |
 | 10 | Propensity scores and IPW | [causal-inference-ch10-churn-use-case.pdf](docs/guides/causal-inference-ch10-churn-use-case.pdf) |
 | 11 | Propensity scores and IPW | [causal-inference-ch11-churn-use-case.pdf](docs/guides/causal-inference-ch11-churn-use-case.pdf) |
+| 12 | IP weighting and marginal structural models | [causal-inference-ch12-churn-use-case.pdf](docs/guides/causal-inference-ch12-churn-use-case.pdf) |
 
 ## Repository structure
 
