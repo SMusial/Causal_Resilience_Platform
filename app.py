@@ -19,7 +19,7 @@ from causal_resilience.foundations.lessons import (
 from causal_resilience.foundations.diagnostics import compute_overlap, compute_weight_diagnostic, compute_balance
 from causal_resilience.foundations.tables import build_po_table_rows, render_po_table
 from causal_resilience.v1.schemas import V1_TARGET_TRIAL, V1Estimand, Protocol
-from causal_resilience.v1.lessons import LESSON_V1_01, LESSON_V1_02
+from causal_resilience.v1.lessons import LESSON_V1_01, LESSON_V1_02, LESSON_V1_03
 
 _C_ECR    = "#0072b2"
 _C_MR     = "#d55e00"
@@ -71,6 +71,7 @@ page = st.sidebar.radio(
         "V0 Sandbox",
         "V1 M1 \u2014 Causal question",
         "V1 M2 \u2014 Potential outcomes",
+        "V1 M3 \u2014 Randomization",
     ],
     index=0,
     key="page",
@@ -560,6 +561,48 @@ elif page == "V0 Sandbox":
             "\u2022 Doubly robust estimation, IV, mediation out of scope for V0."
         )
     _provenance_expander(r_ipw.provenance, teaching_mode, int(n_episodes), assignment_mode_label)
+
+elif page == "V1 M3 \u2014 Randomization":
+    st.title(f"V1 Module 3: {LESSON_V1_03.title}")
+    st.caption(f"Source: {LESSON_V1_03.source_reference}")
+    if assignment_mode != AssignmentMode.RANDOMIZED:
+        st.warning("Set **Assignment mode** to Randomized in the sidebar for this lesson.")
+    _lesson_header(LESSON_V1_03)
+    st.subheader("Learning objective")
+    st.write(LESSON_V1_03.objective)
+    st.subheader("Explanation")
+    st.write(LESSON_V1_03.explanation)
+    st.subheader("What changes from V0")
+    st.table(pd.DataFrame([
+        ("Treatment label",     "EARLY_COORDINATED_RESPONSE", "COORDINATED_RESPONSE"),
+        ("Confounders present", "severity",                   "severity, topology_criticality, team_backlog, operational_readiness"),
+        ("Adjustment needed",   "none under randomization",   "none under randomization"),
+        ("Exchangeability",     "unconditional",              "unconditional (unchanged)"),
+        ("Estimator",           "difference in means",        "difference in means (unchanged)"),
+    ], columns=["Dimension", "V0", "V1"]))
+    st.subheader("Severity balance by treatment group")
+    fig_bal_v1m3 = go.Figure()
+    for label, color in [("EARLY_COORDINATED_RESPONSE", _C_ECR), ("MONITOR_REASSESS", _C_MR)]:
+        grp = df[df["treatment_label"].astype(str) == label]["severity"]
+        fig_bal_v1m3.add_trace(go.Histogram(x=grp, name=label, opacity=0.7, nbinsx=20, marker_color=color))
+    fig_bal_v1m3.update_layout(
+        barmode="overlay",
+        title="Severity distribution by treatment group (randomized)",
+        xaxis_title="Severity", yaxis_title="Count",
+        legend=dict(orientation="h", y=-0.25), height=320,
+    )
+    st.plotly_chart(fig_bal_v1m3, use_container_width=True)
+    st.caption(
+        "Under randomization all four V1 confounders are balanced by design. "
+        "Severity is shown here as a representative check."
+    )
+    st.subheader("Estimate vs. oracle ATE")
+    _show_estimate_chart(result, ground_truth, teaching_mode)
+    st.subheader("Limitation")
+    st.warning(LESSON_V1_03.limitation)
+    st.subheader("Reflection")
+    st.info(LESSON_V1_03.reflection)
+    _provenance_expander(result.provenance, teaching_mode, int(n_episodes), assignment_mode_label)
 
 elif page == "V1 M1 \u2014 Causal question":
     st.title(f"V1 Module 1: {LESSON_V1_01.title}")

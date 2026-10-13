@@ -52,6 +52,7 @@ A single sidebar radio selects the active lesson. V0 and V1 lessons are listed t
 | V0 Sandbox | V0 | Full estimator comparison |
 | V1 M1 | V1 | Ask a causal question (extended) |
 | V1 M2 | V1 | Potential outcomes (extended) |
+| V1 M3 | V1 | Randomization (extended) |
 
 ## V0 analytical modules
 
@@ -223,7 +224,7 @@ V0 is the foundation. V1 extends it into a full causal-inference and decision-in
 |---|---|---|
 | 1 | Ask a causal question — target trial, estimand, population, time zero | ✅ Complete |
 | 2 | Potential outcomes and the fundamental problem of causal inference | ✅ Complete |
-| 3 | Randomization — when association equals causation | 🔜 Planned |
+| 3 | Randomization — when association equals causation | ✅ Complete |
 | 4 | Observational assignment — confounding, bias, and the naive estimator | 🔜 Planned |
 | 5 | The DAG — backdoor paths, valid adjustment sets, and collider bias | 🔜 Planned |
 | 6 | Selection bias and measurement error as controlled failure scenarios | 🔜 Planned |

@@ -162,7 +162,83 @@ LESSON_V1_02 = LessonContent(
 )
 
 
+LESSON_V1_03 = LessonContent(
+    lesson_id="V1-L3",
+    title="Randomization: when association equals causation",
+    objective=(
+        "Explain why randomization supports unconditional exchangeability in "
+        "the V1 world, and why the difference in means estimates the ATE "
+        "despite the richer V1 confounder set."
+    ),
+    causal_question=(
+        "Among eligible synthetic telecom incidents at detection, what is the "
+        "average effect of COORDINATED_RESPONSE versus MONITOR_REASSESS on "
+        "customer_impact_minutes_24h during the following 24 hours?"
+    ),
+    treatment="COORDINATED_RESPONSE \u2014 predefined multi-role coordination bundle within 15 min of detection",
+    comparator="MONITOR_REASSESS \u2014 monitor and reassess at the 60-minute checkpoint",
+    outcome="customer_impact_minutes_24h \u2014 total customer-impact minutes over 24 hours (lower is better)",
+    follow_up="24 hours from first reliable detection timestamp",
+    estimand="ATE = E[Y(1) - Y(0)] on the mean-difference scale",
+    assumptions=[
+        "Consistency: observed outcome equals potential outcome under assigned treatment.",
+        "Exchangeability: Y(a) \u22a5 A (unconditional under randomization).",
+        "Positivity: 0 < P(A=1) < 1 for all episodes in the target population.",
+        "No interference: one episode's treatment does not affect another's outcome (V1 simplification).",
+        "Complete follow-up: 24-hour outcome is observed for all eligible episodes (V1 simplification).",
+    ],
+    explanation=(
+        "Under randomized assignment, treatment is allocated independently of "
+        "severity, topology_criticality, team_backlog, operational_readiness, "
+        "and all other baseline characteristics. This means:\n"
+        "  Y(a) \u22a5 A  (unconditional exchangeability)\n\n"
+        "When unconditional exchangeability holds, the observed group means "
+        "identify the potential-outcome means:\n"
+        "  E[Y | A=1] = E[Y(1)]\n"
+        "  E[Y | A=0] = E[Y(0)]\n\n"
+        "So the crude difference in means estimates the ATE:\n"
+        "  E[Y | A=1] \u2212 E[Y | A=0] = E[Y(1)] \u2212 E[Y(0)] = ATE\n\n"
+        "This holds even though V1 has four confounders. Under randomization, "
+        "none of them need to be measured or adjusted for \u2014 they are balanced "
+        "across treatment groups by design.\n\n"
+        "Finite samples still vary \u2014 the estimate will not equal the oracle "
+        "ATE exactly, but the error shrinks as sample size grows.\n\n"
+        "Source: Hern\u00e1n & Robins, What If, Chapter 2 (\u00a72.1\u20132.2)."
+    ),
+    visual_keys=["outcome_distributions", "estimate_vs_oracle", "covariate_balance_v1"],
+    estimator_or_diagnostic=(
+        "Set assignment mode to Randomized. Compare the difference-in-means "
+        "estimate with the oracle ATE (teaching mode). Check that severity, "
+        "topology_criticality, team_backlog, and operational_readiness are "
+        "balanced across treatment groups \u2014 under randomization this holds "
+        "by design without any adjustment."
+    ),
+    interpretation=(
+        "Under randomization the estimate tracks the oracle ATE. All four V1 "
+        "confounders are balanced by design, not by adjustment. Remaining "
+        "error is sampling variability, not confounding bias. The richer V1 "
+        "confounder set does not change the logic \u2014 randomization makes "
+        "adjustment unnecessary."
+    ),
+    limitation=(
+        "Randomization is a design property \u2014 it cannot be assumed from "
+        "observational data. The bootstrap CI captures sampling variability "
+        "but not the uncertainty introduced by unmeasured confounders in "
+        "non-randomized settings. V1 M3 uses the V0 DGP; the V1 DGP with "
+        "four confounders is introduced in later modules."
+    ),
+    reflection=(
+        "Why does balance on all four V1 confounders not need to be perfect "
+        "for randomization to support a causal interpretation? "
+        "What would happen to the estimate if the randomization probability "
+        "were 80/20 instead of 50/50?"
+    ),
+    source_reference="Hern\u00e1n & Robins, What If, Chapter 2 (\u00a72.1\u20132.2)",
+)
+
+
 V1_LESSONS: dict[str, LessonContent] = {
     LESSON_V1_01.lesson_id: LESSON_V1_01,
     LESSON_V1_02.lesson_id: LESSON_V1_02,
+    LESSON_V1_03.lesson_id: LESSON_V1_03,
 }
