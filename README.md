@@ -118,6 +118,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 12 | IP weighting of marginal structural models for time-varying treatments | [causal-inference-ch12-churn-use-case.pdf](docs/guides/causal-inference-ch12-churn-use-case.pdf) |
 | 13 | Standardization and the parametric g-formula | [causal-inference-ch13-churn-use-case.pdf](docs/guides/causal-inference-ch13-churn-use-case.pdf) |
 | 14 | G-estimation of structural nested models | [causal-inference-ch14-churn-use-case.pdf](docs/guides/causal-inference-ch14-churn-use-case.pdf) |
+| 15 | Instrumental variable estimation | [causal-inference-ch15-churn-use-case.pdf](docs/guides/causal-inference-ch15-churn-use-case.pdf) |
 
 ## Repository structure
 
