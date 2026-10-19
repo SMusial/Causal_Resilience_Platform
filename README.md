@@ -120,6 +120,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 14 | G-estimation of structural nested models | [causal-inference-ch14-churn-use-case.pdf](docs/guides/causal-inference-ch14-churn-use-case.pdf) |
 | 15 | Instrumental variable estimation | [causal-inference-ch15-churn-use-case.pdf](docs/guides/causal-inference-ch15-churn-use-case.pdf) |
 | 16 | Intention to treat and per protocol effects | [causal-inference-ch16-churn-use-case.pdf](docs/guides/causal-inference-ch16-churn-use-case.pdf) |
+| 17 | Causal survival analysis | [causal-inference-ch17-churn-use-case.pdf](docs/guides/causal-inference-ch17-churn-use-case.pdf) |
 
 ## Repository structure
 
