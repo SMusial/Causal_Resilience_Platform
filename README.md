@@ -121,6 +121,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 15 | Instrumental variable estimation | [causal-inference-ch15-churn-use-case.pdf](docs/guides/causal-inference-ch15-churn-use-case.pdf) |
 | 16 | Intention to treat and per protocol effects | [causal-inference-ch16-churn-use-case.pdf](docs/guides/causal-inference-ch16-churn-use-case.pdf) |
 | 17 | Causal survival analysis | [causal-inference-ch17-churn-use-case.pdf](docs/guides/causal-inference-ch17-churn-use-case.pdf) |
+| 18 | Variable selection for causal inference | [causal-inference-ch18-churn-use-case.pdf](docs/guides/causal-inference-ch18-churn-use-case.pdf) |
 
 ## Repository structure
 
