@@ -126,6 +126,7 @@ Applied chapter-by-chapter guides using a telecom churn use case are in [`docs/g
 | 20 | Treatment-confounder feedback | [causal-inference-ch20-churn-use-case.pdf](docs/guides/causal-inference-ch20-churn-use-case.pdf) |
 | 21 | Causal inference with time-varying treatments | [causal-inference-ch21-churn-use-case.pdf](docs/guides/causal-inference-ch21-churn-use-case.pdf) |
 | 22 | Target trial emulation | [causal-inference-ch22-churn-use-case.pdf](docs/guides/causal-inference-ch22-churn-use-case.pdf) |
+| 23 | Causal inference without models | [causal-inference-ch23-churn-use-case.pdf](docs/guides/causal-inference-ch23-churn-use-case.pdf) |
 
 ## Repository structure
 
