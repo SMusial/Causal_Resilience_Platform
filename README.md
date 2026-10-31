@@ -96,6 +96,8 @@ These assumptions cannot be verified from observed data alone. The simulator's s
 
 The primary source is Hernán MA, Robins JM, [*Causal Inference: What If*](https://miguelhernan.org/whatifbook) (free PDF: [`docs/sources/whatif.pdf`](docs/sources/whatif.pdf)). V0 draws on Chapters 1–3 and selected material from Chapter 6.
 
+All 23 chapters of the book have been summarized as applied telecom churn use-case guides and are available in [`docs/guides/`](docs/guides/).
+
 The project follows the book's central discipline: define the causal question, population, intervention, comparator, outcome, time zero, follow-up, and identification assumptions before selecting an estimator or displaying a number.
 
 ### Chapter guides
