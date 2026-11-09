@@ -147,35 +147,50 @@ def _show_estimate_chart(res, gt, tm):
     st.plotly_chart(fig, use_container_width=True)
     _bootstrap_note()
 
-def _render_dag():
+def _render_dag(partial: bool = False):
+    """DAG with all three nodes always visible.
+    partial=True: only Z->X active; X->Y and Z->Y greyed out (slide 3).
+    partial=False: all edges active (slide 4 full DAG).
+    """
     nodes = {"severity": (1.0, 1.8), "treatment": (0.0, 1.0), "outcome": (2.0, 1.0)}
+    _GREY = "#aaaaaa"
     edges = [
-        ("severity", "treatment", _C_CONF,   "Confounder path"),
-        ("severity", "outcome",   _C_CONF,   "Confounder path"),
-        ("treatment", "outcome",  _C_CAUSAL, "Causal path"),
+        ("severity", "treatment", _C_CONF,                        2.5, "Confounder path (Z→X)"),
+        ("severity", "outcome",   _GREY if partial else _C_CONF,  1.5 if partial else 2.5, "Z→Y"),
+        ("treatment", "outcome",  _GREY if partial else _C_CAUSAL, 1.5 if partial else 2.5, "Causal path (X→Y)"),
     ]
     fig = go.Figure()
-    for src, dst, color, _lbl in edges:
+    for src, dst, color, width, _lbl in edges:
         x0, y0 = nodes[src]; x1, y1 = nodes[dst]
         fig.add_annotation(x=x1, y=y1, ax=x0, ay=y0,
                            xref="x", yref="y", axref="x", ayref="y",
                            showarrow=True, arrowhead=3, arrowsize=1.5,
-                           arrowwidth=2.5, arrowcolor=color)
-    nc = {"severity": _C_CONF, "treatment": _C_CAUSAL, "outcome": _C_CAUSAL}
+                           arrowwidth=width, arrowcolor=color)
+    nc = {
+        "severity":  _C_CONF,
+        "treatment": _C_CAUSAL,
+        "outcome":   _GREY if partial else _C_CAUSAL,
+    }
     for name, (x, y) in nodes.items():
         fig.add_trace(go.Scatter(
             x=[x], y=[y], mode="markers+text", text=[name], textposition="top center",
             marker=dict(size=28, color=nc[name], line=dict(color="white", width=2)),
             textfont=dict(color="#000000", size=13), showlegend=False,
         ))
-    for color, label, dash in [
-        (_C_CONF,   "Confounder path (backdoor) \u2014 pink/dashed", "dash"),
-        (_C_CAUSAL, "Causal path \u2014 blue/solid", "solid"),
-    ]:
+    if partial:
+        legend_items = [(_C_CONF, "Z→X active", "solid"), (_GREY, "X→Y, Z→Y (not yet shown)", "dot")]
+        title = "Slide 3 — Z→X: the dispatcher uses terrain difficulty to assign tier"
+    else:
+        legend_items = [
+            (_C_CONF,   "Confounder path (backdoor) — pink", "solid"),
+            (_C_CAUSAL, "Causal path — blue", "solid"),
+        ]
+        title = "Slide 4 — Full DAG: severity drives both treatment and outcome (confounding)"
+    for color, label, dash in legend_items:
         fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
                                  line=dict(color=color, width=3, dash=dash), name=label))
     fig.update_layout(
-        title="V0 baseline DAG: severity is a common cause of treatment and outcome",
+        title=title,
         xaxis=dict(visible=False, range=[-0.5, 2.5]),
         yaxis=dict(visible=False, range=[0.6, 2.1]),
         height=300, margin=dict(t=50, b=20),
@@ -355,10 +370,15 @@ elif page == "V0 L4 \u2014 Confounding and the DAG":
     st.subheader("Explanation")
     st.write(LESSON_4.explanation)
     st.subheader("Causal DAG")
-    st.plotly_chart(_render_dag(), use_container_width=True)
+    st.plotly_chart(_render_dag(partial=True), use_container_width=True)
     st.caption(
-        "Pink/dashed arrows: confounder paths (backdoor). Blue/solid arrow: causal path. "
-        "The backdoor path treatment \u2190 severity \u2192 outcome opens a non-causal association."
+        "Slide 3: only Z→X is active. Y (outcome) is present but greyed out — "
+        "it becomes relevant once we see that Z also drives Y."
+    )
+    st.plotly_chart(_render_dag(partial=False), use_container_width=True)
+    st.caption(
+        "Slide 4 (full DAG): pink arrows = confounder paths (backdoor). Blue arrow = causal path. "
+        "The backdoor path treatment ← severity → outcome opens a non-causal association."
     )
     st.subheader("Severity balance by treatment group")
     fig_bal4 = go.Figure()
