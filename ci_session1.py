@@ -171,11 +171,10 @@ tabs = st.tabs([
     "1 · BI / ML Trap",
     "2 · Confounders",
     "3 · Selection Bias",
-    "4 · Full DAG",
-    "5 · TCO Crossover",
-    "6 · Naive vs Causal",
-    "7 · Period 1 TOP 3",
-    "8 · Lessons",
+    "4 · TCO Crossover",
+    "5 · Naive vs Causal",
+    "6 · Period 1 TOP 3",
+    "7 · Lessons",
 ])
 
 # ===========================================================================
@@ -384,81 +383,10 @@ with tabs[3]:
     )
 
 # ===========================================================================
-# Tab 4 — Full DAG (with Y_TCO scatter)
+# Tab 4 — TCO Crossover
 # ===========================================================================
 with tabs[4]:
-    st.header("4 · Full DAG — Z drives X and Y")
-
-    dag_col, scatter_col = st.columns([1, 2])
-
-    with dag_col:
-        st.markdown("**Structural DAG**")
-        nodes = {"Z\n(terrain)": (1.0, 1.8), "X\n(tier)": (0.0, 1.0), "Y\n(TCO)": (2.0, 1.0)}
-        _PINK = "#cc79a7"
-        _BLUE = "#0072b2"
-        edges = [
-            ("Z\n(terrain)", "X\n(tier)",  _PINK, 2.5, "Z→X (backdoor)"),
-            ("Z\n(terrain)", "Y\n(TCO)",   _PINK, 2.5, "Z→Y (direct)"),
-            ("X\n(tier)",    "Y\n(TCO)",   _BLUE, 2.5, "X→Y (causal)"),
-        ]
-        fig_dag = go.Figure()
-        for src, dst, color, width, _ in edges:
-            x0, y0 = nodes[src]; x1, y1 = nodes[dst]
-            fig_dag.add_annotation(
-                x=x1, y=y1, ax=x0, ay=y0,
-                xref="x", yref="y", axref="x", ayref="y",
-                showarrow=True, arrowhead=3, arrowsize=1.5,
-                arrowwidth=width, arrowcolor=color,
-            )
-        nc = {"Z\n(terrain)": _PINK, "X\n(tier)": _BLUE, "Y\n(TCO)": _TCO}
-        for name, (x, y) in nodes.items():
-            fig_dag.add_trace(go.Scatter(
-                x=[x], y=[y], mode="markers+text",
-                text=[name], textposition="top center",
-                marker=dict(size=32, color=nc[name], line=dict(color="white", width=2)),
-                textfont=dict(size=12, color="#000000"), showlegend=False,
-            ))
-        for color, label in [(_PINK, "Confounder path (backdoor)"), (_BLUE, "Causal path")]:
-            fig_dag.add_trace(go.Scatter(x=[None], y=[None], mode="lines",
-                                         line=dict(color=color, width=3), name=label))
-        fig_dag.update_layout(
-            title="Full DAG: Z→X, Z→Y, X→Y",
-            xaxis=dict(visible=False, range=[-0.5, 2.5]),
-            yaxis=dict(visible=False, range=[0.6, 2.2]),
-            height=360, margin=dict(t=50, b=10),
-            legend=dict(orientation="h", y=-0.05),
-            plot_bgcolor="white",
-        )
-        st.plotly_chart(fig_dag, use_container_width=True)
-        st.caption(
-            "Pink = confounder paths (Z→X and Z→Y). "
-            "Blue = causal path (X→Y). "
-            "Naive comparison conflates all three."
-        )
-
-    with scatter_col:
-        st.markdown("**Z vs Y (Total TCO) coloured by tier**")
-        fig_sc = px.scatter(
-            df, x="Z", y="Y_TCO", color="tier",
-            color_discrete_map={"Tier-1": _T1, "Tier-2": _T2},
-            opacity=0.5, labels={"Z": "Z — Terrain Difficulty", "Y_TCO": "Total TCO (€)"},
-            title="Z → Y: terrain difficulty drives TCO regardless of tier",
-        )
-        fig_sc.add_vline(x=Z_STAR, line_dash="dash", line_color=_TCO,
-                         annotation_text=f"Z*≈{Z_STAR:.1f}", annotation_position="top left")
-        fig_sc.update_layout(height=360, legend=dict(orientation="h", y=-0.2))
-        st.plotly_chart(fig_sc, use_container_width=True)
-        st.caption(
-            "Both tiers show rising TCO with Z — that's Z→Y. "
-            "Tier-1 sites cluster at high Z — that's Z→X. "
-            "Naive comparison picks up both effects at once."
-        )
-
-# ===========================================================================
-# Tab 5 — TCO Crossover
-# ===========================================================================
-with tabs[5]:
-    st.header("5 · TCO Crossover Point Z*")
+    st.header("4 · TCO Crossover Point Z*")
     st.markdown(
         f"Below Z*≈**{Z_STAR:.1f}** Tier-2 is cheaper overall. "
         f"Above Z*≈**{Z_STAR:.1f}** Tier-1 saves money despite higher contract cost."
@@ -495,10 +423,10 @@ with tabs[5]:
     )
 
 # ===========================================================================
-# Tab 6 — Naive vs Causal
+# Tab 5 — Naive vs Causal
 # ===========================================================================
-with tabs[6]:
-    st.header("6 · Naive OLS vs Causal Estimate")
+with tabs[5]:
+    st.header("5 · Naive OLS vs Causal Estimate")
     st.markdown(
         "OLS ignores Z and returns a flat (wrong) estimate. "
         "A Z-adjusted estimate recovers the true CATE curve."
@@ -566,10 +494,10 @@ with tabs[6]:
         st.plotly_chart(fig_true, use_container_width=True)
 
 # ===========================================================================
-# Tab 7 — Period 1 TOP 3
+# Tab 6 — Period 1 TOP 3
 # ===========================================================================
-with tabs[7]:
-    st.header("7 · Period 1 — TOP 3 Takeaways")
+with tabs[6]:
+    st.header("6 · Period 1 — TOP 3 Takeaways")
     for title, body in [
         ("1 · Correlation is not causation",
          "The BI dashboard showed Tier-1 costs more. "
@@ -590,10 +518,10 @@ with tabs[7]:
             "Tier-1 always, Tier-2 always, or Z-conditional — which would you choose and why?")
 
 # ===========================================================================
-# Tab 8 — Lessons
+# Tab 7 — Lessons
 # ===========================================================================
-with tabs[8]:
-    st.header("8 · Lessons & Session 2 Preview")
+with tabs[7]:
+    st.header("7 · Lessons & Session 2 Preview")
     lessons = [
         ("Ask how the data was generated",
          "Before any number, ask: who made what decision, based on what? "
